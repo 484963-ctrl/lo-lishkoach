@@ -112,10 +112,10 @@
       <div class="card link">
         <span class="ic">📱</span>
         <h3>אפליקציה לטלפון (אנדרואיד)</h3>
-        <span class="vchip">גרסה <b data-ver>…</b></span>
+        <span class="vchip">גרסה <b data-ver id="apkVer">…</b></span>
         <small>התזכורות מגיעות גם כשהאפליקציה סגורה. גרסה חדשה מותקנת מעל הקודמת, והנתונים נשמרים.</small>
         <div class="url">github.com/484963-ctrl/lo-lishkoach/releases/latest/download/lo-lishkoach.apk</div>
-        <div class="file">הגרסה האחרונה: <bdi dir="ltr" id="apkName">lo-lishkoach.apk</bdi></div>
+        <div class="file">שם הקובץ: <bdi dir="ltr" id="apkName">lo-lishkoach.apk</bdi></div>
         <div class="row"><a class="btn go" id="apkLink" href="https://github.com/484963-ctrl/lo-lishkoach/releases/latest/download/lo-lishkoach.apk">הורדה</a><button class="btn" data-copy="https://github.com/484963-ctrl/lo-lishkoach/releases/latest/download/lo-lishkoach.apk">העתקת קישור</button></div>
       </div>
       <div class="card link">
@@ -244,13 +244,24 @@
       const d = new Date(info.updatedAt);
       document.getElementById('updated').textContent = new Intl.DateTimeFormat('he-IL', {timeZone: 'Asia/Jerusalem', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'}).format(d).replace(',', ' בשעה');
       document.getElementById('updatedChip').hidden = false;
-      // הקובץ לטלפון נבנה מאותו עדכון, ובשם שלו הגרסה, התאריך והשעה (אותו חישוב כמו ב-scripts/release-name.mjs)
-      const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {timeZone: 'Asia/Jerusalem', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'}).formatToParts(d).map(x => [x.type, x.value]));
-      const name = `lo-lishkoach-v${info.version}-${p.day}.${p.month}.${p.year}-${p.hour}.${p.minute}.apk`;
-      document.getElementById('apkName').textContent = name;
     } catch {
       document.querySelectorAll('[data-ver]').forEach(el => el.textContent = 'לא ידוע');
     }
+  })();
+  // כפתור ההורדה: הקובץ עם הגרסה, התאריך והשעה בשם (למשל lo-lishkoach-v1.6-26.10.2026-12.30.apk),
+  // כך שגם הקובץ שיורד למחשב או לטלפון נקרא כך. בודקים ב-GitHub איזה קובץ באמת קיים עכשיו,
+  // כי הקובץ לטלפון מוכן כמה דקות אחרי האתר. אם הבדיקה נכשלת, נשאר הקישור הקבוע.
+  (async () => {
+    try {
+      const r = await fetch('https://api.github.com/repos/484963-ctrl/lo-lishkoach/releases/latest', {cache: 'no-store'});
+      if (!r.ok) return;
+      const asset = (await r.json()).assets?.find(a => /^lo-lishkoach-v.+\.apk$/.test(a.name));
+      if (!asset) return;
+      document.getElementById('apkLink').href = asset.browser_download_url;
+      document.getElementById('apkName').textContent = asset.name;
+      const v = asset.name.match(/^lo-lishkoach-v([\d.]+)-/)?.[1];
+      if (v) document.getElementById('apkVer').textContent = v;
+    } catch {}
   })();
   const toast = t => { const el = document.getElementById('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2500); };
   document.querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => {
