@@ -97,6 +97,20 @@
     .pins a,.pins button{display:flex;align-items:center;gap:6px;border:0;border-radius:12px;padding:9px 12px;background:var(--surface);box-shadow:var(--shadow);text-decoration:none;color:var(--ink);font-weight:500;font-size:.92em;max-width:100%}
     .pins a span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .pins button{color:var(--accent-ink);background:var(--accent-soft);box-shadow:none}
+    /* קבצים מצורפים */
+    .frows{display:flex;flex-direction:column;gap:6px}
+    .frow{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:12px;padding:6px 6px 6px 10px}
+    .frow .fi{flex:none;width:40px;height:40px;border-radius:8px;display:grid;place-items:center;font-size:1.3em;background:var(--surface);overflow:hidden}
+    .frow .fi img{width:100%;height:100%;object-fit:cover}
+    .frow .fn{flex:1;min-width:0;font-size:.9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .frow .fn small{display:block;color:var(--muted);font-size:.85em}
+    .frow a,.frow button{flex:none;width:40px;height:40px;border:0;border-radius:10px;background:var(--surface);display:grid;place-items:center;text-decoration:none;font-size:1.05em}
+    .fbtns{display:flex;gap:6px;margin-top:6px}
+    .fbtns button{flex:1;border:2px dashed var(--line);background:none;border-radius:12px;padding:9px 4px;font-weight:700;color:var(--accent-ink)}
+    .fbox.drag{outline:3px dashed var(--accent);outline-offset:4px;border-radius:12px}
+    .pinnote{width:100%;margin-top:8px;background:var(--surface);box-shadow:var(--shadow);border-radius:14px;padding:12px 14px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5;font-size:.93em;cursor:pointer}
+    .pinnote span{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+    .pinnote.open span{display:block}
 
     .empty{text-align:center;color:var(--muted);padding:48px 20px;line-height:1.6}
     .empty b{display:block;font-size:2.4em;margin-bottom:6px}
@@ -224,6 +238,8 @@
       <label>קישורים (תיקייה בדרייב, תוכנית, הזמנה, מעקב משלוח...)</label>
       <div class="lrows" id="fLinks"></div>
       <button type="button" class="addlink" id="fAddLink">＋ הוספת קישור</button>
+      <label>קבצים (תמונות, PDF, הצעות מחיר, תוכניות)</label>
+      <div class="fbox" id="fFiles"></div>
       <label class="lab" for="fNotes">הערות <button type="button" id="notesOpen">⤢ חלון גדול</button></label>
       <textarea id="fNotes" placeholder="פרטים, מידות, מספר הזמנה..."></textarea>
       <div class="row">
@@ -240,13 +256,21 @@
   <!-- קישורים קבועים של נושא: מופיעים בראש הנושא -->
   <dialog id="pinDlg">
     <div class="sheet">
-      <h3 id="pinTitle">קישורים קבועים</h3>
-      <p class="status" style="margin-top:0">קישורים שתמיד מופיעים בראש הנושא, למשל תיקיית הפרויקט ב־Google Drive.</p>
+      <h3 id="pinTitle">קבוע בנושא</h3>
+      <p class="status" style="margin-top:0">מה שתמיד מופיע בראש הנושא: קישורים (למשל תיקיית הפרויקט ב־Google Drive), קבצים והערה.</p>
+      <label>קישורים</label>
       <div class="lrows" id="pinLinks"></div>
       <button type="button" class="addlink" id="pinAdd">＋ הוספת קישור</button>
+      <label>קבצים</label>
+      <div class="fbox" id="pinFiles"></div>
+      <label for="pinNote">הערה קבועה (טלפונים, פרטים, כל טקסט)</label>
+      <textarea id="pinNote" placeholder="למשל: הקבלן – משה 050-0000000, מספר המגרש, קוד השער..."></textarea>
       <div class="row"><button class="primary" id="pinSave">שמירה</button><button id="pinCancel">ביטול</button></div>
     </div>
   </dialog>
+
+  <input type="file" id="anyFile" multiple hidden>
+  <input type="file" id="camFile" accept="image/*" capture="environment" hidden>
 
   <!-- הערות בחלון גדול, לטקסט ארוך -->
   <dialog id="notesDlg">
@@ -330,7 +354,7 @@
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const SITE = 'https://484963-ctrl.github.io/lo-lishkoach/';
   // מספר הגרסה: מעלים אותו בכל עדכון. מופיע בהגדרות, בדף המידע ובשם הקובץ לטלפון
-  const APP_VERSION = '1.7';
+  const APP_VERSION = '1.8';
 
   // נושאים לדוגמה. מזהה קבוע, כדי שיהיו זהים בכל מכשיר חדש. אפשר לשנות, למחוק ולהוסיף בהגדרות
   const DEFAULT_CATS = [
@@ -474,6 +498,94 @@
   }
   const readLinks = box => [...box.querySelectorAll('.lrow')].map(r => ({name: r.querySelector('.lname').value.trim(), url: fixUrl(r.querySelector('.lurl').value)})).filter(l => l.url);
 
+  // ----- קבצים מצורפים: נשמרים ב-Supabase Storage, בתיקייה של הקוד המשפחתי -----
+  const BUCKET = 'lo-lishkoach-files', MAX_FILE = 25 * 1024 * 1024;
+  const fileIcon = f => /^image\//.test(f.type) ? '🖼️' : /pdf/.test(f.type) || /\.pdf$/i.test(f.name) ? '📄'
+    : /sheet|excel|csv/.test(f.type) || /\.(xlsx?|csv)$/i.test(f.name) ? '📊' : /word|document/.test(f.type) || /\.docx?$/i.test(f.name) ? '📝'
+    : /video\//.test(f.type) ? '🎬' : /audio\//.test(f.type) ? '🎵' : '📎';
+  const fileSize = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+  function fileA(f) {
+    const a = document.createElement('a');
+    a.href = f.url; a.target = '_blank'; a.rel = 'noopener'; a.title = f.name;
+    a.append(fileIcon(f) + ' ');
+    const sp = document.createElement('span'); sp.textContent = f.name; a.append(sp);
+    return a;
+  }
+  async function uploadFile(file) {
+    const c = window.LO_LISHKOACH_CONFIG;
+    if (!syncCode || !c) throw new Error('nocode');
+    if (file.size > MAX_FILE) throw new Error('big');
+    // נתיב: קוד משפחתי / מזהה אקראי ארוך / שם באותיות לועזיות (השם המקורי נשמר במשימה)
+    const rand = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
+    const ext = (file.name.match(/\.[A-Za-z0-9]{1,8}$/) || [''])[0].toLowerCase();
+    const path = `${syncCode}/${rand}/file${ext}`;
+    const r = await fetch(`${c.url}/storage/v1/object/${BUCKET}/${path}`, {
+      method: 'POST', headers: {apikey: c.publishableKey, 'Content-Type': file.type || 'application/octet-stream'}, body: file,
+    });
+    if (!r.ok) throw new Error(r.status);
+    const name = file.name || 'צילום' + ext;
+    return {name, url: `${c.url}/storage/v1/object/public/${BUCKET}/${path}?download=${encodeURIComponent(name)}`, size: file.size, type: file.type || ''};
+  }
+  // תיבת קבצים (בעריכת משימה ובקבוע של נושא). הרשימה העדכנית נמצאת ב-box._files
+  function fileBox(box, files) {
+    box._files = [...files];
+    box.innerHTML = '<div class="frows"></div><div class="fbtns"><button type="button" data-f="any">📎 צירוף קובץ</button><button type="button" data-f="cam">📷 צילום</button></div><div class="status"></div>';
+    drawFiles(box);
+    box.querySelector('.fbtns').onclick = e => {
+      const b = e.target.closest('button'); if (!b) return;
+      fileTarget = box;
+      $(b.dataset.f === 'cam' ? 'camFile' : 'anyFile').click();
+    };
+    if (matchMedia('(hover:hover) and (pointer:fine)').matches) box.querySelector('.status').textContent = 'אפשר גם לגרור קבצים לכאן, או להדביק תמונה (Ctrl+V)';
+  }
+  function drawFiles(box) {
+    const rows = box.querySelector('.frows');
+    rows.innerHTML = '';
+    box._files.forEach((f, i) => {
+      const r = document.createElement('div');
+      r.className = 'frow';
+      r.innerHTML = '<span class="fi"></span><span class="fn"><span></span><small></small></span><a target="_blank" rel="noopener" aria-label="פתיחת הקובץ">↗</a><button type="button" aria-label="הסרת הקובץ">🗑️</button>';
+      const fi = r.querySelector('.fi');
+      if (/^image\//.test(f.type)) { const img = new Image(); img.src = f.url.split('?')[0]; img.alt = ''; img.onerror = () => { img.remove(); fi.textContent = '🖼️'; }; fi.append(img); }
+      else fi.textContent = fileIcon(f);
+      r.querySelector('.fn span').textContent = f.name;
+      r.querySelector('.fn small').textContent = f.size ? fileSize(f.size) : '';
+      r.querySelector('a').href = f.url;
+      r.querySelector('button').onclick = () => { box._files.splice(i, 1); drawFiles(box); };
+      rows.append(r);
+    });
+  }
+  let fileTarget = null;
+  async function addFiles(box, list) {
+    list = [...(list || [])];
+    if (!box || !list.length) return;
+    const st = box.querySelector('.status');
+    if (!syncCode) {
+      st.textContent = '';
+      toast('כדי לצרף קבצים צריך קוד משפחתי: 👨‍👩‍👧 ← „יצירת קוד משפחתי”');
+      return;
+    }
+    let ok = 0;
+    for (const [i, file] of list.entries()) {
+      st.textContent = `מעלה ${list.length > 1 ? `${i + 1} מתוך ${list.length}: ` : ''}${file.name || 'צילום'}...`;
+      try { box._files.push(await uploadFile(file)); ok++; drawFiles(box); }
+      catch (e) {
+        toast(e.message === 'big' ? `„${file.name}” גדול מ־25 מגה` : navigator.onLine === false ? 'אין חיבור לאינטרנט' : `לא הצלחתי להעלות את „${file.name}”`);
+      }
+    }
+    st.textContent = ok ? `✓ הועלו ${ok} ${ok === 1 ? 'קובץ' : 'קבצים'}. לא לשכוח ללחוץ „שמירה”` : '';
+  }
+  for (const id of ['anyFile', 'camFile']) $(id).onchange = e => { const f = [...e.target.files]; e.target.value = ''; addFiles(fileTarget, f); };
+  // במחשב: גרירת קבצים לתיבה, או הדבקת תמונה
+  document.addEventListener('dragover', e => { const box = e.target.closest?.('.fbox'); if (box) { e.preventDefault(); box.classList.add('drag'); } });
+  document.addEventListener('dragleave', e => e.target.closest?.('.fbox')?.classList.remove('drag'));
+  document.addEventListener('drop', e => { const box = e.target.closest?.('.fbox'); if (!box) return; e.preventDefault(); box.classList.remove('drag'); addFiles(box, e.dataTransfer.files); });
+  document.addEventListener('paste', e => {
+    const box = $('pinDlg').open ? $('pinFiles') : $('edit').open && !$('notesDlg').open ? $('fFiles') : null;
+    const f = [...(e.clipboardData?.files || [])];
+    if (box && f.length && !$('iconDlg').open) { e.preventDefault(); addFiles(box, f); }
+  });
+
   const viewTasks = () => state.view === 'all' ? state.tasks : state.tasks.filter(t => catOf(t.cat).id === state.view);
   const people = () => [...new Set([...Object.keys(state.people), ...state.tasks.map(t => t.who).filter(Boolean), me].filter(Boolean))];
 
@@ -555,27 +667,39 @@
   function pinsBar(cat) {
     const bar = document.createElement('div');
     bar.className = 'pins';
-    const links = linksOf(cat);
+    const links = linksOf(cat), files = cat.files || [];
     links.forEach(l => bar.append(linkA(l)));
+    files.forEach(f => bar.append(fileA(f)));
     const b = document.createElement('button');
     b.dataset.act = 'pins';
-    b.textContent = links.length ? '✏️' : '📎 קישור קבוע לנושא (למשל תיקייה בדרייב)';
-    b.ariaLabel = 'עריכת הקישורים הקבועים';
+    const any = links.length || files.length || cat.note;
+    b.textContent = any ? '✏️' : '📎 קישורים, קבצים והערה לנושא';
+    b.ariaLabel = 'עריכת מה שקבוע בנושא';
     bar.append(b);
+    if (cat.note) {
+      const n = document.createElement('div');
+      n.className = 'pinnote'; n.title = 'לחיצה מציגה הכול';
+      n.append(document.createElement('span')); n.firstChild.textContent = '📝 ' + cat.note;
+      n.onclick = () => n.classList.toggle('open');
+      bar.append(n);
+    }
     return bar;
   }
   let pinCat = null;
   function openPins(cat) {
     pinCat = cat;
-    $('pinTitle').textContent = `📎 קישורים קבועים – ${cat.name}`;
+    $('pinTitle').textContent = `📎 קבוע בנושא – ${cat.name}`;
     linkRows($('pinLinks'), linksOf(cat));
-    if (!linksOf(cat).length) addLinkRow($('pinLinks'));
+    fileBox($('pinFiles'), cat.files || []);
+    $('pinNote').value = cat.note || '';
     $('pinDlg').showModal();
   }
   $('pinAdd').onclick = () => addLinkRow($('pinLinks')).querySelector('.lurl').focus();
   $('pinCancel').onclick = () => $('pinDlg').close();
   $('pinSave').onclick = () => {
     pinCat.links = readLinks($('pinLinks'));
+    pinCat.files = $('pinFiles')._files;
+    pinCat.note = $('pinNote').value.trim();
     delete pinCat.link;
     save(); render(); $('pinDlg').close();
   };
@@ -605,6 +729,7 @@
     if (t.who) tag('👤 ' + t.who);
     if (t.done && t.doneBy) tag('✓ ' + t.doneBy);
     if (t.notes) tag('📝 ' + (t.notes.length > 30 ? t.notes.slice(0, 30) + '…' : t.notes));
+    if (t.files?.length) tag('📎 ' + (t.files.length === 1 ? t.files[0].name : t.files.length + ' קבצים'));
     if (!meta.children.length) meta.remove();
     // קישור אחד: נפתח ישר. כמה קישורים: נפתחת המשימה, ושם כל הקישורים
     const links = linksOf(t);
@@ -685,7 +810,7 @@
     $('fDate').value = q.due || ''; $('fTime').value = q.time || '';
     $('fRemind').value = String(t ? t.remind : 0);
     $('fRepeat').value = t?.repeat || '';
-    $('fWho').value = t?.who || ''; linkRows($('fLinks'), t ? linksOf(t) : []); $('fNotes').value = t?.notes || '';
+    $('fWho').value = t?.who || ''; linkRows($('fLinks'), t ? linksOf(t) : []); fileBox($('fFiles'), t?.files || []); $('fNotes').value = t?.notes || '';
     requestAnimationFrame(growNotes);
     $('fDel').hidden = !t;
     fillPeople(); editChanged();
@@ -694,7 +819,7 @@
   }
   function formTask() {
     return {title: $('fTitle').value.trim(), cat: $('fCat').value, due: $('fDate').value, time: $('fDate').value ? $('fTime').value : '',
-      remind: +$('fRemind').value, repeat: $('fDate').value ? $('fRepeat').value : '', who: $('fWho').value.trim(), links: readLinks($('fLinks')), notes: $('fNotes').value.trim()};
+      remind: +$('fRemind').value, repeat: $('fDate').value ? $('fRepeat').value : '', who: $('fWho').value.trim(), links: readLinks($('fLinks')), files: $('fFiles')._files, notes: $('fNotes').value.trim()};
   }
   function editChanged() {
     const f = formTask();

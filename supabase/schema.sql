@@ -28,3 +28,24 @@ revoke all on function public.lo_lishkoach_get(text) from public;
 revoke all on function public.lo_lishkoach_put(text, jsonb) from public;
 grant execute on function public.lo_lishkoach_get(text) to anon, authenticated;
 grant execute on function public.lo_lishkoach_put(text, jsonb) to anon, authenticated;
+
+-- קבצים מצורפים (Supabase Storage). כל קובץ בתיקייה של הקוד המשפחתי, עם מזהה אקראי ארוך בנתיב.
+-- העלאה: רק לתיקייה של קוד משפחתי שקיים. הורדה: רק למי שיש את הקישור המלא (אין רשימת קבצים). כבר הופעל.
+create or replace function public.lo_lishkoach_code_exists(p_code text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.lo_lishkoach_families where code = p_code);
+$$;
+revoke all on function public.lo_lishkoach_code_exists(text) from public;
+grant execute on function public.lo_lishkoach_code_exists(text) to anon, authenticated;
+
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('lo-lishkoach-files', 'lo-lishkoach-files', true, 26214400)
+on conflict (id) do update set public = true, file_size_limit = 26214400;
+
+drop policy if exists "lo_lishkoach_upload" on storage.objects;
+create policy "lo_lishkoach_upload" on storage.objects for insert to anon, authenticated
+with check (
+  bucket_id = 'lo-lishkoach-files'
+  and public.lo_lishkoach_code_exists((storage.foldername(name))[1])
+  and char_length((storage.foldername(name))[2]) >= 20
+);
