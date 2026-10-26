@@ -107,6 +107,33 @@
     .frow a,.frow button{flex:none;width:40px;height:40px;border:0;border-radius:10px;background:var(--surface);display:grid;place-items:center;text-decoration:none;font-size:1.05em}
     .fbtns{display:flex;gap:6px;margin-top:6px}
     .fbtns button{flex:1;border:2px dashed var(--line);background:none;border-radius:12px;padding:9px 4px;font-weight:700;color:var(--accent-ink)}
+    /* אנשי קשר: טלפון, וואטסאפ, מייל */
+    .crows{display:flex;flex-direction:column;gap:6px}
+    .crow{display:flex;flex-wrap:wrap;gap:6px;background:var(--bg);border-radius:12px;padding:6px}
+    .crow .field{flex:1 1 120px;min-width:0;padding:8px}
+    .crow .cname{flex-basis:calc(100% - 46px)}
+    .crow .acts{flex-basis:100%;display:flex;gap:6px}
+    .crow .acts a{flex:1;border-radius:10px;padding:8px 4px;background:var(--surface);text-align:center;text-decoration:none;color:var(--ink);font-weight:700;font-size:.85em}
+    .crow .acts a[hidden]{display:none}
+    .crow > button{flex:none;width:40px;height:40px;border:0;border-radius:10px;background:var(--surface)}
+    .twobtn{display:flex;gap:6px}
+    .twobtn .addlink{flex:1}
+    .pins .ct{display:flex;align-items:center;gap:2px;background:var(--surface);box-shadow:var(--shadow);border-radius:12px;padding:3px 3px 3px 10px;font-size:.92em;font-weight:500}
+    .pins .ct span{padding:0 8px 0 4px}
+    .pins .ct a{box-shadow:none;padding:6px 8px;background:var(--bg);border-radius:9px;font-size:1em}
+    .calls{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+    .call{background:var(--bg);border-radius:14px;padding:10px}
+    .call b{display:block;margin-bottom:6px}
+    .call .acts{display:flex;gap:6px}
+    .call .acts a{flex:1;border-radius:10px;padding:11px 4px;background:var(--accent);color:#fff;text-align:center;text-decoration:none;font-weight:700}
+    .call .acts a.wa{background:#25d366}
+    .call .acts a.ml{background:var(--surface);color:var(--ink)}
+    .rthumb{flex:none;width:44px;height:44px;border-radius:8px;overflow:hidden;margin-left:2px}
+    .rthumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .receipt{margin-top:12px;background:var(--surface);box-shadow:var(--shadow);border-radius:16px;padding:14px;text-align:center}
+    .receipt p{margin:0 0 10px;color:var(--muted);font-size:.9em}
+    .receipt .twobtn button{flex:1;border:0;border-radius:14px;padding:16px 6px;font-weight:700;font-size:1.05em;background:var(--bg)}
+    .receipt .twobtn .primary{background:var(--accent);color:#fff}
     .fbox.drag{outline:3px dashed var(--accent);outline-offset:4px;border-radius:12px}
     .pinnote{width:100%;margin-top:8px;background:var(--surface);box-shadow:var(--shadow);border-radius:14px;padding:12px 14px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5;font-size:.93em;cursor:pointer}
     .pinnote span{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
@@ -237,7 +264,10 @@
       <datalist id="people"></datalist>
       <label>קישורים (תיקייה בדרייב, תוכנית, הזמנה, מעקב משלוח...)</label>
       <div class="lrows" id="fLinks"></div>
-      <button type="button" class="addlink" id="fAddLink">＋ הוספת קישור</button>
+      <div class="twobtn"><button type="button" class="addlink" id="fAddLink">＋ הוספת קישור</button><button type="button" class="addlink" data-drive="fLinks">📁 מגוגל דרייב</button></div>
+      <label>אנשי קשר (טלפון, וואטסאפ, מייל)</label>
+      <div class="crows" id="fContacts"></div>
+      <button type="button" class="addlink" id="fAddContact">＋ הוספת איש קשר</button>
       <label>קבצים (תמונות, PDF, הצעות מחיר, תוכניות)</label>
       <div class="fbox" id="fFiles"></div>
       <label class="lab" for="fNotes">הערות <button type="button" id="notesOpen">⤢ חלון גדול</button></label>
@@ -260,7 +290,10 @@
       <p class="status" style="margin-top:0">מה שתמיד מופיע בראש הנושא: קישורים (למשל תיקיית הפרויקט ב־Google Drive), קבצים והערה.</p>
       <label>קישורים</label>
       <div class="lrows" id="pinLinks"></div>
-      <button type="button" class="addlink" id="pinAdd">＋ הוספת קישור</button>
+      <div class="twobtn"><button type="button" class="addlink" id="pinAdd">＋ הוספת קישור</button><button type="button" class="addlink" data-drive="pinLinks">📁 מגוגל דרייב</button></div>
+      <label>אנשי קשר (קבלן, ספק, בעל מקצוע)</label>
+      <div class="crows" id="pinContacts"></div>
+      <button type="button" class="addlink" id="pinAddContact">＋ הוספת איש קשר</button>
       <label>קבצים</label>
       <div class="fbox" id="pinFiles"></div>
       <label for="pinNote">הערה קבועה (טלפונים, פרטים, כל טקסט)</label>
@@ -269,6 +302,16 @@
     </div>
   </dialog>
 
+  <!-- אנשי קשר של משימה: חיוג, וואטסאפ, מייל -->
+  <dialog id="callDlg">
+    <div class="sheet">
+      <h3 id="callTitle">אנשי קשר</h3>
+      <div class="calls" id="calls"></div>
+      <div class="row"><button id="callClose">סגירה</button></div>
+    </div>
+  </dialog>
+  <input type="file" id="rcptCam" accept="image/*" capture="environment" hidden>
+  <input type="file" id="rcptFile" accept="image/*,application/pdf" multiple hidden>
   <input type="file" id="anyFile" multiple hidden>
   <input type="file" id="camFile" accept="image/*" capture="environment" hidden>
 
@@ -354,7 +397,7 @@
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const SITE = 'https://484963-ctrl.github.io/lo-lishkoach/';
   // מספר הגרסה: מעלים אותו בכל עדכון. מופיע בהגדרות, בדף המידע ובשם הקובץ לטלפון
-  const APP_VERSION = '1.8';
+  const APP_VERSION = '1.9';
 
   // נושאים לדוגמה. מזהה קבוע, כדי שיהיו זהים בכל מכשיר חדש. אפשר לשנות, למחוק ולהוסיף בהגדרות
   const DEFAULT_CATS = [
@@ -362,6 +405,7 @@
     {id: 'super', icon: '🛒', name: 'קניות בסופר'},
     {id: 'todo', icon: '✅', name: 'משימות'},
     {id: 'build', icon: '🏗️', name: 'תוכניות לבנייה'},
+    {id: 'receipts', icon: '🧾', name: 'קבלות'},
   ];
   // מילים שמכניסות משימה לנושא הנכון כשמוסיפים מהמסך „הכול”
   const GUESS = {
@@ -416,6 +460,8 @@
     try { state = JSON.parse(localStorage.getItem(KEY)); } catch { state = null; }
     if (!state || !state.tasks) state = {view: 'all', tasks: [], cats: DEFAULT_CATS.map(c => ({...c, u: 0})), gone: {}, people: {}};
     state.gone ||= {}; state.people ||= {};
+    // נושא „קבלות” נוסף בגרסה 1.9. מי שמחק אותו – לא חוזר
+    if (!state.cats.some(c => c.id === 'receipts') && !state.gone.receipts) state.cats.push({id: 'receipts', icon: '🧾', name: 'קבלות', u: 0});
     if (!state.cats.length) state.cats = DEFAULT_CATS.map(c => ({...c, u: 0}));
     rememberSaved();
   }
@@ -556,15 +602,27 @@
     });
   }
   let fileTarget = null;
+  // קבצים נשמרים בענן לפי הקוד המשפחתי. אין עדיין קוד? יוצרים אחד בשקט
+  async function ensureCode() {
+    if (syncCode) return true;
+    try {
+      const c = newCode();
+      await putRemote(c, localDoc());
+      syncCode = c; lastSync = Date.now();
+      try { localStorage.setItem(SYNC_KEY, c); } catch {}
+      syncState('on');
+      toast('נוצר קוד משפחתי כדי לשמור קבצים. אפשר לשתף אותו עם המשפחה ב־👨‍👩‍👧');
+      return true;
+    } catch {
+      toast(navigator.onLine === false ? 'אין חיבור לאינטרנט' : 'לא הצלחתי לשמור את הקובץ, נסו שוב בעוד רגע');
+      return false;
+    }
+  }
   async function addFiles(box, list) {
     list = [...(list || [])];
     if (!box || !list.length) return;
     const st = box.querySelector('.status');
-    if (!syncCode) {
-      st.textContent = '';
-      toast('כדי לצרף קבצים צריך קוד משפחתי: 👨‍👩‍👧 ← „יצירת קוד משפחתי”');
-      return;
-    }
+    if (!await ensureCode()) { st.textContent = ''; return; }
     let ok = 0;
     for (const [i, file] of list.entries()) {
       st.textContent = `מעלה ${list.length > 1 ? `${i + 1} מתוך ${list.length}: ` : ''}${file.name || 'צילום'}...`;
@@ -585,6 +643,138 @@
     const f = [...(e.clipboardData?.files || [])];
     if (box && f.length && !$('iconDlg').open) { e.preventDefault(); addFiles(box, f); }
   });
+
+  // ----- אנשי קשר: שם, טלפון ומייל. כפתורים לחיוג, לוואטסאפ ולמייל -----
+  const telHref = ph => 'tel:' + ph.replace(/[^\d+]/g, '');
+  // וואטסאפ צריך מספר בינלאומי: 050-1234567 → 972501234567
+  const waHref = ph => { let d = ph.replace(/\D/g, ''); if (d.startsWith('00')) d = d.slice(2); else if (d.startsWith('0')) d = '972' + d.slice(1); return 'https://wa.me/' + d; };
+  const contactsOf = o => (o.contacts || []).filter(c => c.phone || c.email);
+  function contactActs(c, cls = '') {
+    const box = document.createElement('div');
+    box.className = 'acts';
+    const mk = (href, text, k) => { const a = document.createElement('a'); a.href = href; a.textContent = text; if (k) a.className = k; if (/^https/.test(href)) { a.target = '_blank'; a.rel = 'noopener'; } box.append(a); };
+    if (c.phone) { mk(telHref(c.phone), '📞 חיוג'); mk(waHref(c.phone), '💬 וואטסאפ', 'wa'); }
+    if (c.email) mk('mailto:' + c.email.trim(), '✉️ מייל', 'ml');
+    return box;
+  }
+  function contactRows(box, list) { box.innerHTML = ''; list.forEach(c => addContactRow(box, c)); }
+  function addContactRow(box, c = {}) {
+    const r = document.createElement('div');
+    r.className = 'crow';
+    r.innerHTML = '<input class="field cname" placeholder="שם (למשל: משה הקבלן)" aria-label="שם"><button type="button" aria-label="מחיקת איש הקשר">🗑️</button><input class="field cphone" type="tel" dir="ltr" placeholder="050-0000000" aria-label="טלפון"><input class="field cmail" type="email" dir="ltr" placeholder="name@gmail.com" aria-label="מייל"><div class="acts"><a data-k="tel">📞 חיוג</a><a data-k="wa" target="_blank" rel="noopener">💬 וואטסאפ</a><a data-k="mail">✉️ מייל</a></div>';
+    const [name, del, phone, mail] = r.children, acts = r.querySelector('.acts');
+    name.value = c.name || ''; phone.value = c.phone || ''; mail.value = c.email || '';
+    const upd = () => {
+      const ph = phone.value.trim(), em = mail.value.trim();
+      const [tel, wa, ml] = acts.children;
+      tel.hidden = wa.hidden = !ph; ml.hidden = !em;
+      if (ph) { tel.href = telHref(ph); wa.href = waHref(ph); }
+      if (em) ml.href = 'mailto:' + em;
+      acts.hidden = !ph && !em;
+    };
+    phone.addEventListener('input', upd); mail.addEventListener('input', upd); upd();
+    del.onclick = () => r.remove();
+    box.append(r);
+    return r;
+  }
+  const readContacts = box => [...box.querySelectorAll('.crow')].map(r => ({name: r.querySelector('.cname').value.trim(), phone: r.querySelector('.cphone').value.trim(), email: r.querySelector('.cmail').value.trim()})).filter(c => c.phone || c.email);
+  function openCalls(title, list) {
+    $('callTitle').textContent = '📞 ' + title;
+    const box = $('calls');
+    box.innerHTML = '';
+    for (const c of list) {
+      const d = document.createElement('div');
+      d.className = 'call';
+      const b = document.createElement('b'); b.textContent = c.name || c.phone || c.email; d.append(b);
+      d.append(contactActs(c));
+      box.append(d);
+    }
+    $('callDlg').showModal();
+  }
+  $('callClose').onclick = () => $('callDlg').close();
+  $('callDlg').addEventListener('click', e => { if (e.target === $('callDlg')) $('callDlg').close(); });
+
+  // ----- בחירה מגוגל דרייב (Google Picker). צריך הגדרה חד־פעמית ב-config.js: google.clientId, apiKey, appId -----
+  const isNative = () => !!window.Capacitor?.isNativePlatform?.();
+  const loadScript = src => new Promise((ok, fail) => { if (document.querySelector(`script[src="${src}"]`)) return ok(); const sc = document.createElement('script'); sc.src = src; sc.onload = ok; sc.onerror = fail; document.head.append(sc); });
+  let driveToken = '', driveTokenAt = 0;
+  async function pickFromDrive(boxId) {
+    const g = window.LO_LISHKOACH_CONFIG?.google, box = $(boxId), dlg = box.closest('dialog');
+    const manual = text => { toast(text); addLinkRow(box).querySelector('.lurl').focus(); };
+    if (isNative()) return manual('בטלפון: בדרייב לוחצים ⋮ ליד הקובץ ← שיתוף ← העתקת קישור, ומדביקים כאן');
+    if (!g?.clientId || !g?.apiKey) return manual('הבחירה מדרייב עוד לא הוגדרה. בינתיים: בדרייב ← שיתוף ← העתקת קישור, ומדביקים כאן');
+    try {
+      await Promise.all([loadScript('https://apis.google.com/js/api.js'), loadScript('https://accounts.google.com/gsi/client')]);
+      await new Promise(ok => gapi.load('picker', ok));
+      // כניסה לחשבון גוגל (פעם בשעה בערך). הרשאה drive.file: רק לקבצים שבוחרים
+      if (!driveToken || Date.now() - driveTokenAt > 50 * 60000) {
+        driveToken = await new Promise((ok, fail) => google.accounts.oauth2.initTokenClient({
+          client_id: g.clientId, scope: 'https://www.googleapis.com/auth/drive.file',
+          callback: r => r.access_token ? ok(r.access_token) : fail(r), error_callback: fail,
+        }).requestAccessToken());
+        driveTokenAt = Date.now();
+      }
+      // חלון הבחירה של גוגל לא נראה מעל חלון פתוח, אז סוגרים אותו לרגע ופותחים שוב אחרי הבחירה
+      dlg.close();
+      const view = new google.picker.DocsView().setIncludeFolders(true).setSelectFolderEnabled(true);
+      new google.picker.PickerBuilder()
+        .addView(view).addView(new google.picker.DocsUploadView())
+        .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
+        .setOAuthToken(driveToken).setDeveloperKey(g.apiKey).setAppId(g.appId || '').setLocale('iw')
+        .setTitle('בחירה מגוגל דרייב')
+        .setCallback(d => {
+          if (d.action !== google.picker.Action.PICKED && d.action !== google.picker.Action.CANCEL) return;
+          dlg.showModal();
+          if (d.action === google.picker.Action.PICKED)
+            for (const doc of d.docs) addLinkRow(box, {name: doc.name, url: doc.url});
+        }).build().setVisible(true);
+    } catch {
+      if (!dlg.open) dlg.showModal();
+      manual('לא הצלחתי לפתוח את גוגל דרייב. אפשר להעתיק קישור מדרייב ולהדביק כאן');
+    }
+  }
+  document.addEventListener('click', e => { const b = e.target.closest('[data-drive]'); if (b) pickFromDrive(b.dataset.drive); });
+
+  // ----- קבלות: צילום קבלה נשמר כמשימה בנושא „קבלות”, עם התמונה ותאריך -----
+  // תמונה גדולה מוקטנת ל-1600 פיקסלים: הקבלה נשארת קריאה והקובץ קטן
+  function shrinkPhoto(file) {
+    if (!/^image\/(jpeg|png|webp|heic|heif)/.test(file.type) || file.size < 600000) return Promise.resolve(file);
+    return new Promise(ok => {
+      const img = new Image(), url = URL.createObjectURL(file);
+      img.onload = () => {
+        const k = Math.min(1, 1600 / Math.max(img.width, img.height)), cv = document.createElement('canvas');
+        cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        URL.revokeObjectURL(url);
+        cv.toBlob(b => ok(b ? new File([b], (file.name || 'receipt').replace(/\.\w+$/, '') + '.jpg', {type: 'image/jpeg'}) : file), 'image/jpeg', 0.82);
+      };
+      img.onerror = () => ok(file);
+      img.src = url;
+    });
+  }
+  async function addReceipts(list) {
+    list = [...(list || [])];
+    if (!list.length || !await ensureCode()) return;
+    let last = null;
+    for (const [i, file] of list.entries()) {
+      toast(`שומר קבלה${list.length > 1 ? ` ${i + 1} מתוך ${list.length}` : ''}...`);
+      try {
+        const f = await uploadFile(await shrinkPhoto(file));
+        const d = new Date(), date = `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
+        if (!f.name || /^(image|IMG|PXL|photo|receipt)/i.test(f.name)) f.name = `קבלה ${date}.jpg`;
+        last = {id: uid(), title: `קבלה ${date}`, cat: 'receipts', due: '', time: '', remind: -1, repeat: '', who: '', links: [], files: [f], notes: '', done: false};
+        state.tasks.push(last);
+      } catch (e) { toast(e.message === 'big' ? 'הקובץ גדול מ־25 מגה' : 'לא הצלחתי לשמור את הקבלה. בודקים שיש אינטרנט ומנסים שוב'); }
+    }
+    if (!last) return;
+    save(); render();
+    // פותחים את הקבלה האחרונה כדי לכתוב ממי ובכמה
+    openEdit(last);
+    $('fTitle').select();
+    toast('✓ הקבלה נשמרה. אפשר לכתוב ממי ובכמה, ולשמור');
+  }
+  $('rcptCam').onchange = e => { const f = [...e.target.files]; e.target.value = ''; addReceipts(f); };
+  $('rcptFile').onchange = e => { const f = [...e.target.files]; e.target.value = ''; addReceipts(f); };
 
   const viewTasks = () => state.view === 'all' ? state.tasks : state.tasks.filter(t => catOf(t.cat).id === state.view);
   const people = () => [...new Set([...Object.keys(state.people), ...state.tasks.map(t => t.who).filter(Boolean), me].filter(Boolean))];
@@ -634,13 +824,16 @@
     const main = $('list');
     main.innerHTML = '';
     notifBanner(main);
+    if (!all && cat.id === 'receipts') {
+      main.insertAdjacentHTML('beforeend', '<div class="receipt"><p>מצלמים קבלה, והיא נשמרת כאן עם התאריך. אחר כך אפשר לכתוב ממי ובכמה.</p><div class="twobtn"><button class="primary" data-act="rcam">📷 צילום קבלה</button><button data-act="rfile">🖼️ מהגלריה / קובץ</button></div></div>');
+    }
     if (!all) main.append(pinsBar(cat));
     const open = list.filter(t => !t.done), done = list.filter(t => t.done);
     if (!list.length) {
       main.insertAdjacentHTML('beforeend', all
         ? '<div class="empty"><b>🔔</b>אין כרגע מה לזכור.<br>כותבים למעלה ולוחצים +<br>ב־📅 מוסיפים תאריך, תזכורת ומי אחראי.</div>'
-        : '<div class="empty"><b></b><span></span><br>כותבים למעלה ולוחצים +</div>');
-      if (!all) { main.querySelector('.empty b').append(iconEl(cat)); main.querySelector('.empty span').textContent = `אין עדיין כלום ב„${cat.name}”.`; }
+        : '<div class="empty"><b></b><span class="msg"></span><br>כותבים למעלה ולוחצים +</div>');
+      if (!all) { main.querySelector('.empty b').append(iconEl(cat)); main.querySelector('.empty .msg').textContent = cat.id === 'receipts' ? 'עוד אין קבלות.' : `אין עדיין כלום ב„${cat.name}”.`; }
       return;
     }
     // קבוצות לפי זמן: באיחור, היום, מחר, השבוע, בהמשך, בלי תאריך
@@ -670,10 +863,19 @@
     const links = linksOf(cat), files = cat.files || [];
     links.forEach(l => bar.append(linkA(l)));
     files.forEach(f => bar.append(fileA(f)));
+    for (const c of contactsOf(cat)) {
+      const ct = document.createElement('div');
+      ct.className = 'ct';
+      const n = document.createElement('span'); n.textContent = '👤 ' + (c.name || c.phone || c.email); ct.append(n);
+      const mk = (href, text, label) => { const a = document.createElement('a'); a.href = href; a.textContent = text; a.ariaLabel = label; if (/^https/.test(href)) { a.target = '_blank'; a.rel = 'noopener'; } ct.append(a); };
+      if (c.phone) { mk(telHref(c.phone), '📞', 'חיוג'); mk(waHref(c.phone), '💬', 'וואטסאפ'); }
+      if (c.email) mk('mailto:' + c.email, '✉️', 'מייל');
+      bar.append(ct);
+    }
     const b = document.createElement('button');
     b.dataset.act = 'pins';
-    const any = links.length || files.length || cat.note;
-    b.textContent = any ? '✏️' : '📎 קישורים, קבצים והערה לנושא';
+    const any = links.length || files.length || cat.note || contactsOf(cat).length;
+    b.textContent = any ? '✏️' : '📎 קישורים, אנשי קשר, קבצים והערה לנושא';
     b.ariaLabel = 'עריכת מה שקבוע בנושא';
     bar.append(b);
     if (cat.note) {
@@ -691,14 +893,17 @@
     $('pinTitle').textContent = `📎 קבוע בנושא – ${cat.name}`;
     linkRows($('pinLinks'), linksOf(cat));
     fileBox($('pinFiles'), cat.files || []);
+    contactRows($('pinContacts'), contactsOf(cat));
     $('pinNote').value = cat.note || '';
     $('pinDlg').showModal();
   }
   $('pinAdd').onclick = () => addLinkRow($('pinLinks')).querySelector('.lurl').focus();
+  $('pinAddContact').onclick = () => addContactRow($('pinContacts')).querySelector('.cname').focus();
   $('pinCancel').onclick = () => $('pinDlg').close();
   $('pinSave').onclick = () => {
     pinCat.links = readLinks($('pinLinks'));
     pinCat.files = $('pinFiles')._files;
+    pinCat.contacts = readContacts($('pinContacts'));
     pinCat.note = $('pinNote').value.trim();
     delete pinCat.link;
     save(); render(); $('pinDlg').close();
@@ -731,6 +936,21 @@
     if (t.notes) tag('📝 ' + (t.notes.length > 30 ? t.notes.slice(0, 30) + '…' : t.notes));
     if (t.files?.length) tag('📎 ' + (t.files.length === 1 ? t.files[0].name : t.files.length + ' קבצים'));
     if (!meta.children.length) meta.remove();
+    // תמונה ראשונה (למשל קבלה): תמונה קטנה, ולחיצה פותחת אותה
+    const pic = (t.files || []).find(f => /^image\//.test(f.type));
+    if (pic) {
+      const a = document.createElement('a');
+      a.className = 'rthumb'; a.href = pic.url.split('?')[0]; a.target = '_blank'; a.rel = 'noopener'; a.ariaLabel = 'פתיחת התמונה';
+      const img = new Image(); img.src = pic.url.split('?')[0]; img.alt = ''; img.loading = 'lazy'; img.onerror = () => a.remove();
+      a.append(img); el.append(a);
+    }
+    // אנשי קשר: כפתור שפותח חיוג, וואטסאפ ומייל
+    if (contactsOf(t).length) {
+      const b = document.createElement('button');
+      b.className = 'link'; b.dataset.act = 'calls'; b.style.border = '0'; b.style.background = 'none';
+      b.textContent = '📞'; b.ariaLabel = 'חיוג, וואטסאפ או מייל';
+      el.append(b);
+    }
     // קישור אחד: נפתח ישר. כמה קישורים: נפתחת המשימה, ושם כל הקישורים
     const links = linksOf(t);
     if (links.length === 1) {
@@ -810,7 +1030,7 @@
     $('fDate').value = q.due || ''; $('fTime').value = q.time || '';
     $('fRemind').value = String(t ? t.remind : 0);
     $('fRepeat').value = t?.repeat || '';
-    $('fWho').value = t?.who || ''; linkRows($('fLinks'), t ? linksOf(t) : []); fileBox($('fFiles'), t?.files || []); $('fNotes').value = t?.notes || '';
+    $('fWho').value = t?.who || ''; linkRows($('fLinks'), t ? linksOf(t) : []); fileBox($('fFiles'), t?.files || []); contactRows($('fContacts'), t ? contactsOf(t) : []); $('fNotes').value = t?.notes || '';
     requestAnimationFrame(growNotes);
     $('fDel').hidden = !t;
     fillPeople(); editChanged();
@@ -819,7 +1039,7 @@
   }
   function formTask() {
     return {title: $('fTitle').value.trim(), cat: $('fCat').value, due: $('fDate').value, time: $('fDate').value ? $('fTime').value : '',
-      remind: +$('fRemind').value, repeat: $('fDate').value ? $('fRepeat').value : '', who: $('fWho').value.trim(), links: readLinks($('fLinks')), files: $('fFiles')._files, notes: $('fNotes').value.trim()};
+      remind: +$('fRemind').value, repeat: $('fDate').value ? $('fRepeat').value : '', who: $('fWho').value.trim(), links: readLinks($('fLinks')), files: $('fFiles')._files, contacts: readContacts($('fContacts')), notes: $('fNotes').value.trim()};
   }
   function editChanged() {
     const f = formTask();
@@ -854,6 +1074,7 @@
     if (f.due && f.remind >= 0) askNotifOnce();
   };
   $('fCancel').onclick = () => $('edit').close();
+  $('fAddContact').onclick = () => addContactRow($('fContacts')).querySelector('.cname').focus();
   $('fAddLink').onclick = () => addLinkRow($('fLinks')).querySelector('.lurl').focus();
   // שדה ההערות גדל לפי הטקסט, ו„חלון גדול” פותח אותו כמעט על כל המסך
   function growNotes() {
@@ -911,6 +1132,9 @@
     if (!btn) return;
     if (btn.dataset.act === 'showdone') { showDone = !showDone; return render(); }
     if (btn.dataset.act === 'pins') return openPins(catOf(state.view));
+    if (btn.dataset.act === 'rcam') return $('rcptCam').click();
+    if (btn.dataset.act === 'rfile') return $('rcptFile').click();
+    if (btn.dataset.act === 'calls') { const t = state.tasks.find(x => x.id === btn.closest('.item')?.dataset.id); return openCalls(t.title, contactsOf(t)); }
     if (btn.dataset.act === 'notif') return enableNotif();
     if (btn.dataset.act === 'notifx') { try { localStorage.setItem('lo-lishkoach-nonotif', '1'); } catch {} return render(); }
     const t = state.tasks.find(x => x.id === btn.closest('.item')?.dataset.id);
