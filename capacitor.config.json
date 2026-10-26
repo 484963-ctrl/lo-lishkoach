@@ -1,0 +1,8 @@
+{
+  "appId": "com.haim.lolishkoach",
+  "appName": "לא לשכוח",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}

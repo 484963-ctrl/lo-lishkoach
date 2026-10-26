@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- הסמל הקטן בשורת ההתראות: פעמון לבן -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="96" android:viewportHeight="96">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M48,18c-11,0 -19,8 -19,20v12l-6,10v4h50v-4l-6,-10V38c0,-12 -8,-20 -19,-20zM40,68a8,8 0,0 0,16 0z"/>
+</vector>
