@@ -25,18 +25,35 @@ jobs:
       - run: npm ci
       - name: Build APK
         run: ./scripts/build-apk.sh
-        env:
-          VERSION_CODE: ${{ github.run_number }}
+
+      # עותק עם הגרסה, התאריך והשעה בשם, למשל lo-lishkoach-v1.5-26.10.2026-10.20.apk
+      - name: Name APK with version and date
+        id: apkname
+        run: |
+          NAME=$(node scripts/release-name.mjs)
+          cp lo-lishkoach.apk "$NAME"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$(node scripts/release-name.mjs --version)" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         with:
           name: lo-lishkoach-apk
-          path: lo-lishkoach.apk
+          path: ${{ steps.apkname.outputs.name }}
           if-no-files-found: error
+
+      - name: Remove older dated APKs from the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          KEEP: ${{ steps.apkname.outputs.name }}
+        run: |
+          gh release view latest --json assets -q '.assets[].name' | grep -E '^lo-lishkoach-v.*\.apk$' | grep -vxF "$KEEP" | while read -r old; do gh release delete-asset latest "$old" -y; done || true
       - name: Publish to the "latest" release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
           name: לא לשכוח – הגרסה האחרונה
-          body: גרסה 1.${{ github.run_number }}, נבנתה מ-${{ github.sha }}. מורידים את lo-lishkoach.apk ומתקינים.
-          files: lo-lishkoach.apk
+          body: גרסה ${{ steps.apkname.outputs.version }}, נבנתה מ-${{ github.sha }}. מורידים את lo-lishkoach.apk (או ${{ steps.apkname.outputs.name }}, אותו קובץ עם הגרסה והתאריך בשם) ומתקינים.
+          files: |
+            lo-lishkoach.apk
+            ${{ steps.apkname.outputs.name }}
           make_latest: true

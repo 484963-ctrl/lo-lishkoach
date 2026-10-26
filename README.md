@@ -6,6 +6,7 @@
 - **אתר (גם למחשב):** https://484963-ctrl.github.io/lo-lishkoach/
   בכרום או באדג׳ אפשר ללחוץ על „התקנה” בשורת הכתובת, והאתר נפתח בחלון משלו כמו תוכנה.
 - **דף מידע והורדות (לשלוח למשפחה):** https://484963-ctrl.github.io/lo-lishkoach/info/
+- **מספר גרסה:** `APP_VERSION` בראש הקוד ב־`www/index.html`. מעלים אותו בכל עדכון. הגרסה וזמן העדכון מופיעים בדף המידע, בהגדרות ובשם הקובץ לטלפון (למשל `lo-lishkoach-v1.5-26.10.2026-12.06.apk`).
 - **אפליקציה לטלפון (אנדרואיד):** https://github.com/484963-ctrl/lo-lishkoach/releases/latest/download/lo-lishkoach.apk
   גרסה חדשה מותקנת מעל הקודמת והנתונים נשמרים (חתימה קבועה, `debug.keystore`).
 

@@ -5,14 +5,14 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 [ -d node_modules ] || npm ci
+node scripts/write-version.mjs   # מספר הגרסה וזמן העדכון, גם בתוך האפליקציה
 rm -rf android
 npx cap add android
 npx cap sync android
 MAIN=android/app/src/main
 
-# מספר גרסה עולה בכל בנייה, כדי שהטלפון יתקין מעל הגרסה הקודמת
-CODE="${VERSION_CODE:-1}"
-sed -i "s/versionCode .*/versionCode $CODE/; s/versionName .*/versionName \"1.$CODE\"/" android/app/build.gradle
+# מספר הגרסה מהקוד (APP_VERSION). המספר הפנימי עולה בכל גרסה, כדי שהטלפון יתקין מעל הגרסה הקודמת
+sed -i "s/versionCode .*/versionCode $(node scripts/release-name.mjs --code)/; s/versionName .*/versionName \"$(node scripts/release-name.mjs --version)\"/" android/app/build.gradle
 
 # הרשאות: התראות (אנדרואיד 13 ומעלה), בזמן מדויק, וגם אחרי הפעלה מחדש של הטלפון
 sed -i 's#<uses-permission android:name="android.permission.INTERNET" />#&\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />\n    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />#' $MAIN/AndroidManifest.xml

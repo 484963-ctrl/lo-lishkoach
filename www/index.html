@@ -250,6 +250,7 @@
         <button id="addCat" class="primary" aria-label="הוספת נושא">+</button>
       </div>
       <div class="row"><a href="https://484963-ctrl.github.io/lo-lishkoach/info/" target="_blank" rel="noopener">ℹ️ מידע והורדות</a><button id="setClose">סגירה</button></div>
+      <div class="status" id="verLine" style="text-align:center"></div>
     </div>
   </dialog>
 
@@ -304,6 +305,8 @@
   // מזהה שמתחיל בזמן היצירה: מיון לפי מזהה = סדר ההוספה, וזהה בכל המכשירים
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const SITE = 'https://484963-ctrl.github.io/lo-lishkoach/';
+  // מספר הגרסה: מעלים אותו בכל עדכון. מופיע בהגדרות, בדף המידע ובשם הקובץ לטלפון
+  const APP_VERSION = '1.5';
 
   // נושאים לדוגמה. מזהה קבוע, כדי שיהיו זהים בכל מכשיר חדש. אפשר לשנות, למחוק ולהוסיף בהגדרות
   const DEFAULT_CATS = [
@@ -729,7 +732,7 @@
   }
   function openSettings() {
     $('myName').value = me;
-    renderCatsEdit(); fillPeople(); notifStatus();
+    renderCatsEdit(); fillPeople(); notifStatus(); showVersion();
     if (!$('setDlg').open) $('setDlg').showModal();
   }
   function renderCatsEdit() {
@@ -835,6 +838,14 @@
     render();
   };
   $('setBtn').onclick = openSettings;
+  // גרסה וזמן עדכון (version.json נכתב בכל עדכון של האתר ובכל בנייה לטלפון)
+  async function showVersion() {
+    $('verLine').textContent = `גרסה ${APP_VERSION}`;
+    try {
+      const info = await (await fetch('version.json', {cache: 'no-store'})).json();
+      if (info.updatedAt) $('verLine').textContent = `גרסה ${info.version || APP_VERSION} · עודכנה ` + new Intl.DateTimeFormat('he-IL', {timeZone: 'Asia/Jerusalem', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'}).format(new Date(info.updatedAt)).replace(',', ' בשעה');
+    } catch {}
+  }
   $('setClose').onclick = () => $('setDlg').close();
 
   // ----- תזכורות -----

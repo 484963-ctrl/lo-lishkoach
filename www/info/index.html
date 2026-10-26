@@ -48,6 +48,11 @@
     .link{display:flex;flex-direction:column;gap:6px}
     .link .ic{font-size:1.8em;line-height:1}
     .link small{color:var(--muted);line-height:1.45}
+    .vchip{align-self:flex-start;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:2px 10px;font-size:.8em}
+    .file{font-size:.78em;color:var(--muted)}
+    .file bdi{font-weight:700;color:var(--ink)}
+    .updated{display:inline-flex;gap:6px;flex-wrap:wrap;margin-top:10px;background:var(--surface);box-shadow:var(--shadow);border-radius:12px;padding:6px 12px;font-size:.88em}
+    .updated b{color:var(--accent-ink)}
     .url{direction:ltr;text-align:left;font-size:.78em;color:var(--muted);background:var(--bg);border-radius:8px;padding:6px 8px;overflow-wrap:anywhere}
     .row{display:flex;gap:8px;margin-top:auto;padding-top:6px}
     .btn{flex:1;border:0;border-radius:12px;padding:11px 8px;font:inherit;font-weight:700;text-align:center;text-decoration:none;cursor:pointer;background:var(--bg);color:var(--ink)}
@@ -87,6 +92,7 @@
     <div>
       <h1>לא לשכוח</h1>
       <p>משימות, קניות ותזכורות לכל המשפחה. בטלפון ובמחשב, עם אותן משימות אצל כולם.</p>
+      <div class="updated" id="updatedChip" hidden><span>גרסה <b data-ver>…</b></span><span>·</span><span>עודכנה <b id="updated"></b></span></div>
     </div>
   </div>
 
@@ -106,13 +112,16 @@
       <div class="card link">
         <span class="ic">📱</span>
         <h3>אפליקציה לטלפון (אנדרואיד)</h3>
+        <span class="vchip">גרסה <b data-ver>…</b></span>
         <small>התזכורות מגיעות גם כשהאפליקציה סגורה. גרסה חדשה מותקנת מעל הקודמת, והנתונים נשמרים.</small>
         <div class="url">github.com/484963-ctrl/lo-lishkoach/releases/latest/download/lo-lishkoach.apk</div>
-        <div class="row"><a class="btn go" href="https://github.com/484963-ctrl/lo-lishkoach/releases/latest/download/lo-lishkoach.apk">הורדה</a><button class="btn" data-copy="https://github.com/484963-ctrl/lo-lishkoach/releases/latest/download/lo-lishkoach.apk">העתקת קישור</button></div>
+        <div class="file">הגרסה האחרונה: <bdi dir="ltr" id="apkName">lo-lishkoach.apk</bdi></div>
+        <div class="row"><a class="btn go" id="apkLink" href="https://github.com/484963-ctrl/lo-lishkoach/releases/latest/download/lo-lishkoach.apk">הורדה</a><button class="btn" data-copy="https://github.com/484963-ctrl/lo-lishkoach/releases/latest/download/lo-lishkoach.apk">העתקת קישור</button></div>
       </div>
       <div class="card link">
         <span class="ic">💻</span>
         <h3>אתר (גם למחשב)</h3>
+        <span class="vchip">גרסה <b data-ver>…</b> · מתעדכן לבד</span>
         <small>נפתח בכל דפדפן, בלי התקנה. בכרום או באדג׳ אפשר להתקין אותו כחלון נפרד.</small>
         <div class="url">484963-ctrl.github.io/lo-lishkoach</div>
         <div class="row"><a class="btn go" href="../">פתיחה</a><button class="btn" data-copy="https://484963-ctrl.github.io/lo-lishkoach/">העתקת קישור</button></div>
@@ -226,6 +235,23 @@
 </div>
 <div class="toast" id="toast"></div>
 <script>
+  // מספר הגרסה וזמן העדכון: מ-version.json, שנכתב בכל עדכון של האתר
+  (async () => {
+    try {
+      const info = await (await fetch('../version.json', {cache: 'no-store'})).json();
+      if (info.version) document.querySelectorAll('[data-ver]').forEach(el => el.textContent = info.version);
+      if (!info.updatedAt) return;
+      const d = new Date(info.updatedAt);
+      document.getElementById('updated').textContent = new Intl.DateTimeFormat('he-IL', {timeZone: 'Asia/Jerusalem', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'}).format(d).replace(',', ' בשעה');
+      document.getElementById('updatedChip').hidden = false;
+      // הקובץ לטלפון נבנה מאותו עדכון, ובשם שלו הגרסה, התאריך והשעה (אותו חישוב כמו ב-scripts/release-name.mjs)
+      const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {timeZone: 'Asia/Jerusalem', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'}).formatToParts(d).map(x => [x.type, x.value]));
+      const name = `lo-lishkoach-v${info.version}-${p.day}.${p.month}.${p.year}-${p.hour}.${p.minute}.apk`;
+      document.getElementById('apkName').textContent = name;
+    } catch {
+      document.querySelectorAll('[data-ver]').forEach(el => el.textContent = 'לא ידוע');
+    }
+  })();
   const toast = t => { const el = document.getElementById('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2500); };
   document.querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => {
     try { await navigator.clipboard.writeText(b.dataset.copy); toast('הקישור הועתק'); } catch { prompt('העתקת הקישור:', b.dataset.copy); }

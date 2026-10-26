@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: [www/**, .github/workflows/pages.yml]
+    paths: [www/**, scripts/write-version.mjs, scripts/release-name.mjs, .github/workflows/pages.yml]
 
 permissions:
   contents: read
@@ -25,6 +25,8 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      # מספר הגרסה וזמן העדכון, לדף המידע ולמסך ההגדרות
+      - run: node scripts/write-version.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
