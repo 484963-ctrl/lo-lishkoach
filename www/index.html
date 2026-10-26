@@ -119,6 +119,8 @@
     .sheet .row button,.sheet .row a{flex:1;border:0;border-radius:12px;padding:12px 6px;font-weight:700;background:var(--bg);text-align:center;text-decoration:none;color:inherit}
     .sheet .primary{background:var(--accent)!important;color:#fff!important}
     .sheet .danger{color:var(--late)}
+    .deskhint{display:none}
+    @media (hover:hover) and (pointer:fine){.deskhint{display:block}}
     .status{font-size:.85em;color:var(--muted);margin-top:8px;min-height:1.2em;line-height:1.4}
     .code{font-size:1.7em;font-weight:700;letter-spacing:.08em;text-align:center;direction:ltr;background:var(--bg);border-radius:12px;padding:12px;margin-top:10px;user-select:all}
     .codein{direction:ltr;text-align:center;letter-spacing:.08em;text-transform:uppercase}
@@ -127,11 +129,14 @@
     .join button{flex:none;border:0;border-radius:12px;padding:10px 16px;font-weight:700}
     .cats{display:flex;flex-direction:column;gap:6px;margin-top:6px}
     .catrow{display:flex;gap:6px;align-items:center}
-    .catrow .emo{width:54px;flex:none;text-align:center;font-size:1.2em;padding:8px 4px}
     .catrow .field{flex:1;min-width:0}
     .catrow button{flex:none;width:42px;height:42px;border:0;border-radius:10px;background:var(--bg)}
-    .emojis{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
-    .emojis button{border:0;background:var(--bg);border-radius:8px;width:38px;height:38px;font-size:1.15em}
+    .catrow .pick{width:48px;height:46px;border:2px solid var(--line);background:var(--surface);font-size:1.3em;padding:0;display:grid;place-items:center;overflow:hidden}
+    .cimg{width:1.25em;height:1.25em;border-radius:6px;object-fit:cover;vertical-align:-.25em;display:inline-block}
+    .catrow .pick .cimg,.bigicon .cimg{width:100%;height:100%;border-radius:0}
+    .bigicon{width:84px;height:84px;margin:4px auto 0;border-radius:18px;background:var(--bg);display:grid;place-items:center;font-size:2.6em;overflow:hidden}
+    .emojis{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:4px;margin-top:10px}
+    .emojis button{border:0;background:var(--bg);border-radius:8px;height:42px;font-size:1.3em;padding:0}
     @media (min-width:700px){header,main,footer{max-width:680px;margin:0 auto}body{font-size:16px}.chips{flex-wrap:wrap;overflow:visible}.toast{max-width:640px;margin:0 auto}}
   </style>
 </head>
@@ -224,14 +229,32 @@
       <label>נושאים</label>
       <div class="cats" id="catsEdit"></div>
       <div class="catrow" style="margin-top:8px">
-        <input class="field emo" id="newEmo" value="📌" aria-label="סמל" maxlength="8">
+        <button class="pick" id="newEmo" aria-label="בחירת סמל או תמונה">📌</button>
         <input class="field" id="newCat" placeholder="נושא חדש" aria-label="שם הנושא">
         <button id="addCat" class="primary" aria-label="הוספת נושא">+</button>
       </div>
-      <div class="emojis" id="emojis"></div>
       <div class="row"><button id="setClose">סגירה</button></div>
     </div>
   </dialog>
+
+  <!-- סמל לנושא: אימוג׳י או תמונה מהטלפון או מהמחשב -->
+  <dialog id="iconDlg">
+    <div class="sheet">
+      <h3 id="iconTitle">סמל לנושא</h3>
+      <div class="bigicon" id="iconShow"></div>
+      <div class="row">
+        <button class="primary" id="iconPhoto">🖼️ תמונה מהגלריה</button>
+        <button id="iconCam">📷 צילום</button>
+      </div>
+      <div class="status deskhint" style="text-align:center">במחשב אפשר גם לגרור תמונה לכאן, או להדביק (Ctrl+V)</div>
+      <label>או בוחרים סמל</label>
+      <div class="emojis" id="emojis"></div>
+      <div class="join"><input class="field" id="iconText" maxlength="8" placeholder="או מקלידים אימוג׳י אחר" aria-label="אימוג׳י"><button class="primary" id="iconTextOk" style="background:var(--accent);color:#fff">אישור</button></div>
+      <div class="row"><button id="iconClose">סגירה</button></div>
+    </div>
+  </dialog>
+  <input type="file" id="iconFile" accept="image/*" hidden>
+  <input type="file" id="iconShoot" accept="image/*" capture="environment" hidden>
 
   <!-- שיתוף עם המשפחה (סנכרון בקוד) -->
   <dialog id="syncDlg">
@@ -279,7 +302,7 @@
     super: ['סופר', 'חלב', 'לחם', 'ביצים', 'ירקות', 'פירות', 'עוף', 'בשר', 'שתייה', 'גבינ', 'מכולת'],
     build: ['בנייה', 'שיפוץ', 'קבלן', 'אדריכל', 'מהנדס', 'היתר', 'תוכני', 'טיח', 'ריצוף', 'חשמלאי', 'אינסטלטור', 'בטון', 'מטבח', 'חלונות'],
   };
-  const EMOJIS = ['📌','🏠','💳','🧾','🚗','🎁','🩺','📚','🔧','🌱','🎉','✈️','👶','🐶','💼','🍽️','🧹','💡'];
+  const EMOJIS = ['📌','📦','🛒','✅','🏗️','🏠','💳','🧾','🚗','🎁','🩺','💊','📚','🎒','🔧','🔨','🪴','🌱','🎉','🎂','✈️','🏖️','👶','🐶','🐱','💼','💻','📱','🍽️','🥦','🧹','🧺','👕','💡','⚽','🎵','⛪','🕍','❤️','⭐'];
   const REPEAT = {day: 'כל יום', week: 'כל שבוע', month: 'כל חודש', year: 'כל שנה'};
   const DAYS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'שבת'];
 
@@ -350,6 +373,13 @@
   }
 
   const catOf = id => state.cats.find(c => c.id === id) || state.cats[0];
+  // הסמל של נושא: תמונה שהעליתם, ואם אין – האימוג׳י
+  function iconEl(c) {
+    if (!c.img) { const sp = document.createElement('span'); sp.textContent = c.icon || '📌'; return sp; }
+    const img = new Image();
+    img.className = 'cimg'; img.alt = ''; img.src = c.img;
+    return img;
+  }
   const viewTasks = () => state.view === 'all' ? state.tasks : state.tasks.filter(t => catOf(t.cat).id === state.view);
   const people = () => [...new Set([...Object.keys(state.people), ...state.tasks.map(t => t.who).filter(Boolean), me].filter(Boolean))];
 
@@ -357,18 +387,19 @@
   function renderChips() {
     const chips = $('chips');
     chips.innerHTML = '';
-    const mk = (id, label, list) => {
+    const mk = (id, label, list, c) => {
       const b = document.createElement('button');
       b.className = 'chip'; b.dataset.view = id; b.setAttribute('role', 'tab');
       b.setAttribute('aria-selected', state.view === id);
       const open = list.filter(t => !t.done);
       b.textContent = label;
+      if (c) b.prepend(iconEl(c));
       if (open.length) b.insertAdjacentHTML('beforeend', `<span class="n">${open.length}</span>`);
       if (open.some(isLate)) b.insertAdjacentHTML('beforeend', '<span class="late" title="באיחור"></span>');
       chips.append(b);
     };
     mk('all', '📋 הכול', state.tasks);
-    for (const c of state.cats) mk(c.id, `${c.icon} ${c.name}`, state.tasks.filter(t => catOf(t.cat).id === c.id));
+    for (const c of state.cats) mk(c.id, c.name, state.tasks.filter(t => catOf(t.cat).id === c.id), c);
     const add = document.createElement('button');
     add.className = 'chip addcat'; add.dataset.view = '+'; add.textContent = '+ נושא';
     chips.append(add);
@@ -401,7 +432,8 @@
     if (!list.length) {
       main.insertAdjacentHTML('beforeend', all
         ? '<div class="empty"><b>🔔</b>אין כרגע מה לזכור.<br>כותבים למעלה ולוחצים +<br>ב־📅 מוסיפים תאריך, תזכורת ומי אחראי.</div>'
-        : `<div class="empty"><b>${cat.icon}</b>אין עדיין כלום ב„${cat.name}”.<br>כותבים למעלה ולוחצים +</div>`);
+        : '<div class="empty"><b></b><span></span><br>כותבים למעלה ולוחצים +</div>');
+      if (!all) { main.querySelector('.empty b').append(iconEl(cat)); main.querySelector('.empty span').textContent = `אין עדיין כלום ב„${cat.name}”.`; }
       return;
     }
     // קבוצות לפי זמן: באיחור, היום, מחר, השבוע, בהמשך, בלי תאריך
@@ -441,7 +473,7 @@
     el.innerHTML = `<button class="check" data-act="toggle" aria-label="בוצע"><span class="box"><svg viewBox="0 0 14 14"><path d="M2.5 7.5l3 3 6-7" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>`
       + (all ? `<span class="catic"></span>` : '')
       + `<button class="open" data-act="edit"><span class="title"></span><span class="meta"></span></button>`;
-    if (all) el.querySelector('.catic').textContent = catOf(t.cat).icon;
+    if (all) el.querySelector('.catic').append(iconEl(catOf(t.cat)));
     el.querySelector('.title').textContent = t.title;
     const meta = el.querySelector('.meta'), tag = (text, cls) => { const s = document.createElement('span'); s.textContent = text; if (cls) s.className = cls; meta.append(s); };
     if (t.due) tag((t.remind >= 0 ? '🔔 ' : '') + dueText(t), 'due' + (isLate(t) ? ' late' : t.due === today() ? ' today' : ''));
@@ -674,20 +706,21 @@
     for (const c of state.cats) {
       const r = document.createElement('div');
       r.className = 'catrow'; r.dataset.id = c.id;
-      r.innerHTML = '<input class="field emo" maxlength="8" aria-label="סמל"><input class="field" aria-label="שם הנושא"><button aria-label="מחיקת הנושא">🗑️</button>';
-      r.children[0].value = c.icon; r.children[1].value = c.name;
+      r.innerHTML = '<button class="pick" data-act="icon" aria-label="החלפת הסמל או התמונה"></button><input class="field" aria-label="שם הנושא"><button data-act="del" aria-label="מחיקת הנושא">🗑️</button>';
+      r.children[0].append(iconEl(c)); r.children[1].value = c.name;
       box.append(r);
     }
   }
   $('catsEdit').addEventListener('change', e => {
     const r = e.target.closest('.catrow'), c = state.cats.find(x => x.id === r.dataset.id);
-    c.icon = r.children[0].value.trim() || '📌';
     c.name = r.children[1].value.trim() || c.name;
     save(); render();
   });
   $('catsEdit').addEventListener('click', e => {
-    if (e.target.tagName !== 'BUTTON') return;
-    const id = e.target.closest('.catrow').dataset.id, c = catOf(id);
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const id = btn.closest('.catrow').dataset.id, c = catOf(id);
+    if (btn.dataset.act === 'icon') return openIcon(c);
     if (state.cats.length === 1) return toast('צריך להשאיר לפחות נושא אחד');
     const n = state.tasks.filter(t => catOf(t.cat).id === id).length;
     const to = state.cats.find(x => x.id !== id);
@@ -699,15 +732,70 @@
   $('addCat').onclick = () => {
     const name = $('newCat').value.trim();
     if (!name) return $('newCat').focus();
-    const c = {id: uid(), icon: $('newEmo').value.trim() || '📌', name};
+    const c = {id: uid(), icon: newIcon.icon, name};
+    if (newIcon.img) c.img = newIcon.img;
     state.cats.push(c); state.view = c.id;
     save(); renderCatsEdit(); render();
-    $('newCat').value = ''; $('newEmo').value = '📌';
+    $('newCat').value = ''; newIcon = {icon: '📌'}; showNewIcon();
     toast(`הנושא „${name}” נוסף`);
   };
   $('newCat').addEventListener('keydown', e => { if (e.key === 'Enter') $('addCat').click(); });
+  // ----- בחירת סמל או תמונה לנושא -----
+  let newIcon = {icon: '📌'}, iconFor = null;   // iconFor: הנושא שעורכים, או newIcon לנושא חדש
+  const showNewIcon = () => { $('newEmo').innerHTML = ''; $('newEmo').append(iconEl(newIcon)); };
+  function openIcon(c) {
+    iconFor = c;
+    $('iconTitle').textContent = c === newIcon ? 'סמל לנושא החדש' : `סמל ל„${c.name}”`;
+    $('iconShow').innerHTML = ''; $('iconShow').append(iconEl(c));
+    $('iconText').value = '';
+    $('iconDlg').showModal();
+  }
+  function setIcon(icon, img) {
+    if (icon) iconFor.icon = icon;
+    if (img) iconFor.img = img; else delete iconFor.img;
+    $('iconDlg').close();
+    if (iconFor === newIcon) return showNewIcon();
+    save(); renderCatsEdit(); render();
+  }
+  $('newEmo').onclick = () => openIcon(newIcon);
   $('emojis').innerHTML = EMOJIS.map(e => `<button>${e}</button>`).join('');
-  $('emojis').onclick = e => { if (e.target.tagName === 'BUTTON') $('newEmo').value = e.target.textContent; };
+  $('emojis').onclick = e => { const b = e.target.closest('button'); if (b) setIcon(b.textContent); };
+  $('iconTextOk').onclick = () => { const v = $('iconText').value.trim(); if (v) setIcon(v); else $('iconText').focus(); };
+  $('iconText').addEventListener('keydown', e => { if (e.key === 'Enter') $('iconTextOk').click(); });
+  $('iconClose').onclick = () => $('iconDlg').close();
+  $('iconDlg').addEventListener('click', e => { if (e.target === $('iconDlg')) $('iconDlg').close(); });
+  $('iconPhoto').onclick = () => $('iconFile').click();
+  $('iconCam').onclick = () => $('iconShoot').click();
+  // מקטינים לריבוע של 128 פיקסלים, כדי שהתמונה תעבור מהר לכל המכשירים
+  function shrink(file) {
+    return new Promise((ok, fail) => {
+      const img = new Image(), url = URL.createObjectURL(file);
+      img.onload = () => {
+        const S = 128, cv = document.createElement('canvas'), m = Math.min(img.width, img.height);
+        cv.width = cv.height = S;
+        const ctx = cv.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, S, S);
+        ctx.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, S, S);
+        URL.revokeObjectURL(url);
+        ok(cv.toDataURL('image/jpeg', 0.8));
+      };
+      img.onerror = fail;
+      img.src = url;
+    });
+  }
+  async function useIconFile(file) {
+    if (!file || !iconFor) return;
+    try { setIcon('', await shrink(file)); toast('התמונה נשמרה'); }
+    catch { toast('לא הצלחתי לפתוח את התמונה'); }
+  }
+  for (const id of ['iconFile', 'iconShoot']) $(id).onchange = e => { const f = e.target.files[0]; e.target.value = ''; useIconFile(f); };
+  $('iconDlg').addEventListener('dragover', e => e.preventDefault());
+  $('iconDlg').addEventListener('drop', e => { e.preventDefault(); useIconFile([...e.dataTransfer.files].find(f => f.type.startsWith('image/'))); });
+  document.addEventListener('paste', e => {
+    if (!$('iconDlg').open) return;
+    const f = [...(e.clipboardData?.files || [])].find(f => f.type.startsWith('image/'));
+    if (f) { e.preventDefault(); useIconFile(f); }
+  });
   $('myName').onchange = () => {
     me = $('myName').value.trim();
     try { localStorage.setItem(ME_KEY, me); } catch {}
