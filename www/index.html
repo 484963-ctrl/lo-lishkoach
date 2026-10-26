@@ -110,7 +110,14 @@
     .sheet label{display:block;font-size:.8em;font-weight:700;color:var(--muted);margin:12px 0 4px}
     .field,.sheet select,.sheet textarea{width:100%;border:2px solid var(--line);background:var(--surface);border-radius:12px;padding:10px;outline:none}
     .field:focus,.sheet select:focus,.sheet textarea:focus{border-color:var(--accent)}
-    .sheet textarea{min-height:70px;resize:vertical}
+    .sheet textarea{min-height:90px;resize:vertical;line-height:1.5}
+    #fNotes{max-height:45vh;overflow-y:auto}
+    .lab{display:flex;align-items:center;justify-content:space-between}
+    .lab button{border:0;background:var(--accent-soft);color:var(--accent-ink);border-radius:8px;padding:4px 10px;font-size:.8em;font-weight:700}
+    /* חלון הערות גדול: כמעט כל המסך */
+    #notesDlg{width:min(96vw,760px);height:min(92vh,900px);max-height:none}
+    #notesDlg .sheet{height:100%;display:flex;flex-direction:column}
+    #notesBig{flex:1;resize:none;font-size:1.05em;line-height:1.6;min-height:0}
     .two{display:flex;gap:8px}
     .two>*{flex:1;min-width:0}
     .quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
@@ -204,7 +211,7 @@
       <datalist id="people"></datalist>
       <label for="fLink">קישור (הזמנה, מעקב משלוח, תוכנית)</label>
       <input class="field" id="fLink" type="url" dir="ltr" placeholder="https://">
-      <label for="fNotes">הערות</label>
+      <label class="lab" for="fNotes">הערות <button type="button" id="notesOpen">⤢ חלון גדול</button></label>
       <textarea id="fNotes" placeholder="פרטים, מידות, מספר הזמנה..."></textarea>
       <div class="row">
         <button class="primary" id="fSave" value="save">שמירה</button>
@@ -215,6 +222,15 @@
         <button type="button" class="danger" id="fDel">מחיקה</button>
       </div>
     </form>
+  </dialog>
+
+  <!-- הערות בחלון גדול, לטקסט ארוך -->
+  <dialog id="notesDlg">
+    <div class="sheet">
+      <h3 id="notesTitle">הערות</h3>
+      <textarea id="notesBig" placeholder="כותבים כאן כמה שרוצים: פרטים, מידות, מספרי הזמנה, רשימות..."></textarea>
+      <div class="row"><button class="primary" id="notesDone">סיום</button><button id="notesCancel">ביטול</button></div>
+    </div>
   </dialog>
 
   <!-- הגדרות: השם שלי, התראות ונושאים -->
@@ -555,6 +571,7 @@
     $('fRemind').value = String(t ? t.remind : 0);
     $('fRepeat').value = t?.repeat || '';
     $('fWho').value = t?.who || ''; $('fLink').value = t?.link || ''; $('fNotes').value = t?.notes || '';
+    requestAnimationFrame(growNotes);
     $('fDel').hidden = !t;
     fillPeople(); editChanged();
     $('edit').showModal();
@@ -597,6 +614,21 @@
     if (f.due && f.remind >= 0) askNotifOnce();
   };
   $('fCancel').onclick = () => $('edit').close();
+  // שדה ההערות גדל לפי הטקסט, ו„חלון גדול” פותח אותו כמעט על כל המסך
+  function growNotes() {
+    const n = $('fNotes');
+    n.style.height = 'auto';
+    n.style.height = Math.max(90, n.scrollHeight + 4) + 'px';
+  }
+  $('fNotes').addEventListener('input', growNotes);
+  $('notesOpen').onclick = () => {
+    $('notesTitle').textContent = '📝 ' + ($('fTitle').value.trim() || 'הערות');
+    $('notesBig').value = $('fNotes').value;
+    $('notesDlg').showModal();
+    $('notesBig').focus();
+  };
+  $('notesDone').onclick = () => { $('fNotes').value = $('notesBig').value; growNotes(); $('notesDlg').close(); };
+  $('notesCancel').onclick = () => $('notesDlg').close();
   $('fDel').onclick = () => {
     const t = editing, u = snapshot();
     state.tasks = state.tasks.filter(x => x !== t);
