@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#5b5bd6">
+  <link rel="icon" href="../icon.svg" type="image/svg+xml">
+  <title>לא לשכוח – מידע והורדות</title>
+  <style>
+    @font-face{font-family:"Rubik";font-weight:400;font-display:swap;src:url(../fonts/rubik-hebrew-400-normal.woff2) format("woff2");unicode-range:U+0590-05FF,U+200C-2010,U+20AA,U+25CC,U+FB1D-FB4F}
+    @font-face{font-family:"Rubik";font-weight:500;font-display:swap;src:url(../fonts/rubik-hebrew-500-normal.woff2) format("woff2");unicode-range:U+0590-05FF,U+200C-2010,U+20AA,U+25CC,U+FB1D-FB4F}
+    @font-face{font-family:"Rubik";font-weight:700;font-display:swap;src:url(../fonts/rubik-hebrew-700-normal.woff2) format("woff2");unicode-range:U+0590-05FF,U+200C-2010,U+20AA,U+25CC,U+FB1D-FB4F}
+    @font-face{font-family:"Rubik";font-weight:400;font-display:swap;src:url(../fonts/rubik-latin-400-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+2000-206F,U+2212}
+    @font-face{font-family:"Rubik";font-weight:700;font-display:swap;src:url(../fonts/rubik-latin-700-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+2000-206F,U+2212}
+    :root{
+      --bg:#f4f4fa; --surface:#fff; --line:#e4e4ef; --ink:#1f1f33; --muted:#6c6c85;
+      --accent:#5b5bd6; --accent-ink:#4343b8; --accent-soft:#ececfb; --warn:#e07a10; --warn-soft:#fdf1e3;
+      --shadow:0 1px 2px rgba(30,30,60,.06),0 4px 14px rgba(30,30,60,.06);
+    }
+    @media (prefers-color-scheme:dark){
+      :root:not([data-theme="light"]){
+        --bg:#121219; --surface:#1d1d28; --line:#2e2e3d; --ink:#ebebf5; --muted:#9a9ab3;
+        --accent:#8080f0; --accent-ink:#a3a3ff; --accent-soft:#272745; --warn:#ffa64d; --warn-soft:#3a2b1a;
+        --shadow:0 1px 2px rgba(0,0,0,.3);
+      }
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Rubik",system-ui,sans-serif;font-size:17px;line-height:1.6}
+    a{color:var(--accent-ink)}
+    .wrap{max-width:760px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top)) 16px 48px}
+
+    .hero{display:flex;gap:16px;align-items:center;margin-bottom:8px}
+    .hero img{width:72px;height:72px;flex:none}
+    .hero h1{margin:0;font-size:1.9em;line-height:1.15}
+    .hero p{margin:4px 0 0;color:var(--muted)}
+    nav{display:flex;gap:6px;overflow-x:auto;margin:18px -16px 0;padding:2px 16px 6px;scrollbar-width:none;position:sticky;top:0;background:var(--bg);z-index:2}
+    nav::-webkit-scrollbar{display:none}
+    nav a{flex:none;text-decoration:none;color:var(--ink);background:var(--surface);box-shadow:var(--shadow);border-radius:999px;padding:7px 13px;font-size:.88em;font-weight:500;white-space:nowrap}
+
+    section{margin-top:30px;scroll-margin-top:60px}
+    h2{font-size:1.3em;margin:0 0 10px;display:flex;gap:8px;align-items:center}
+    h3{font-size:1.02em;margin:0 0 4px}
+    .card{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:16px}
+    .card p{margin:6px 0 0}
+    .muted{color:var(--muted)}
+
+    .links{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+    .link{display:flex;flex-direction:column;gap:6px}
+    .link .ic{font-size:1.8em;line-height:1}
+    .link small{color:var(--muted);line-height:1.45}
+    .url{direction:ltr;text-align:left;font-size:.78em;color:var(--muted);background:var(--bg);border-radius:8px;padding:6px 8px;overflow-wrap:anywhere}
+    .row{display:flex;gap:8px;margin-top:auto;padding-top:6px}
+    .btn{flex:1;border:0;border-radius:12px;padding:11px 8px;font:inherit;font-weight:700;text-align:center;text-decoration:none;cursor:pointer;background:var(--bg);color:var(--ink)}
+    .btn.go{background:var(--accent);color:#fff}
+
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    .feat .ic{font-size:1.5em}
+    .feat p{color:var(--muted);font-size:.93em;line-height:1.5}
+
+    ol.steps{margin:0;padding:0;list-style:none;counter-reset:s}
+    ol.steps li{counter-increment:s;position:relative;padding:0 40px 12px 0}
+    ol.steps li:last-child{padding-bottom:0}
+    ol.steps li::before{content:counter(s);position:absolute;right:0;top:0;width:28px;height:28px;border-radius:50%;background:var(--accent-soft);color:var(--accent-ink);font-weight:700;display:grid;place-items:center;font-size:.9em}
+    b.en{direction:ltr;unicode-bidi:isolate;font-weight:700}
+
+    .examples{display:flex;flex-direction:column;gap:8px}
+    .ex{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;background:var(--bg);border-radius:12px;padding:9px 12px}
+    .ex code{font-family:inherit;font-weight:700}
+    .ex span{color:var(--muted);font-size:.9em}
+
+    .note{background:var(--warn-soft);border-radius:14px;padding:12px 14px;margin-top:12px;font-size:.93em}
+    .note b{color:var(--warn)}
+    table{width:100%;border-collapse:collapse;font-size:.92em}
+    td{padding:8px 4px;border-top:1px solid var(--line);vertical-align:top}
+    tr:first-child td{border-top:0}
+    td:first-child{font-weight:700;white-space:nowrap;padding-left:12px}
+    td code{direction:ltr;unicode-bidi:isolate;font-size:.9em;background:var(--bg);border-radius:6px;padding:1px 5px}
+    footer{margin-top:36px;text-align:center;color:var(--muted);font-size:.85em}
+    .toast{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));max-width:420px;margin:0 auto;background:var(--ink);color:var(--bg);border-radius:12px;padding:12px 14px;text-align:center;opacity:0;transform:translateY(10px);transition:.2s;pointer-events:none}
+    .toast.show{opacity:1;transform:none}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <img src="../icon.svg" alt="">
+    <div>
+      <h1>לא לשכוח</h1>
+      <p>משימות, קניות ותזכורות לכל המשפחה. בטלפון ובמחשב, עם אותן משימות אצל כולם.</p>
+    </div>
+  </div>
+
+  <nav>
+    <a href="#links">הורדות</a>
+    <a href="#features">מה יש באפליקציה</a>
+    <a href="#quick">הוספה מהירה</a>
+    <a href="#family">חיבור המשפחה</a>
+    <a href="#reminders">תזכורות</a>
+    <a href="#install">התקנה</a>
+    <a href="#tech">מאחורי הקלעים</a>
+  </nav>
+
+  <section id="links">
+    <h2>📥 הורדות וקישורים</h2>
+    <div class="links">
+      <div class="card link">
+        <span class="ic">📱</span>
+        <h3>אפליקציה לטלפון (אנדרואיד)</h3>
+        <small>התזכורות מגיעות גם כשהאפליקציה סגורה. גרסה חדשה מותקנת מעל הקודמת, והנתונים נשמרים.</small>
+        <div class="url">github.com/484963-ctrl/lo-lishkoach/releases/latest/download/lo-lishkoach.apk</div>
+        <div class="row"><a class="btn go" href="https://github.com/484963-ctrl/lo-lishkoach/releases/latest/download/lo-lishkoach.apk">הורדה</a><button class="btn" data-copy="https://github.com/484963-ctrl/lo-lishkoach/releases/latest/download/lo-lishkoach.apk">העתקת קישור</button></div>
+      </div>
+      <div class="card link">
+        <span class="ic">💻</span>
+        <h3>אתר (גם למחשב)</h3>
+        <small>נפתח בכל דפדפן, בלי התקנה. בכרום או באדג׳ אפשר להתקין אותו כחלון נפרד.</small>
+        <div class="url">484963-ctrl.github.io/lo-lishkoach</div>
+        <div class="row"><a class="btn go" href="../">פתיחה</a><button class="btn" data-copy="https://484963-ctrl.github.io/lo-lishkoach/">העתקת קישור</button></div>
+      </div>
+      <div class="card link">
+        <span class="ic">ℹ️</span>
+        <h3>הדף הזה</h3>
+        <small>אפשר לשלוח אותו לבני המשפחה, כדי שידעו מה יש באפליקציה ואיך מתחברים.</small>
+        <div class="url">484963-ctrl.github.io/lo-lishkoach/info/</div>
+        <div class="row"><button class="btn go" id="shareInfo">שיתוף הדף</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <h2>✨ מה יש באפליקציה</h2>
+    <div class="grid">
+      <div class="card feat"><span class="ic">🗂️</span><h3>נושאים</h3><p>📦 קניות מאליאקספרס, 🛒 קניות בסופר, ✅ משימות, 🏗️ תוכניות לבנייה. אפשר להוסיף נושאים, לשנות שם ולמחוק.</p></div>
+      <div class="card feat"><span class="ic">🖼️</span><h3>סמל או תמונה לנושא</h3><p>ב־⚙️ לוחצים על הסמל של נושא ובוחרים אימוג׳י, תמונה מהגלריה או צילום. במחשב אפשר לגרור או להדביק תמונה.</p></div>
+      <div class="card feat"><span class="ic">📅</span><h3>תאריך ושעה</h3><p>לכל משימה אפשר לקבוע מתי צריך לעשות אותה. בוחרים תאריך, או לוחצים „היום”, „מחר”, „בעוד שבוע”.</p></div>
+      <div class="card feat"><span class="ic">🔔</span><h3>תזכורת</h3><p>בזמן עצמו, רבע שעה לפני, שעה, יום או שבוע לפני. משימה בלי שעה מזכירה ב־9 בבוקר.</p></div>
+      <div class="card feat"><span class="ic">🔁</span><h3>משימות חוזרות</h3><p>כל יום, שבוע, חודש או שנה. כשמסמנים שבוצעה, היא עוברת לבד לפעם הבאה.</p></div>
+      <div class="card feat"><span class="ic">👤</span><h3>מי אחראי</h3><p>משייכים משימה לאחד מבני המשפחה. כשהיא מסומנת כבוצעה, רואים מי סימן.</p></div>
+      <div class="card feat"><span class="ic">🔗</span><h3>קישור והערות</h3><p>קישור להזמנה באליאקספרס, למעקב משלוח או לתוכנית, ומקום להערות כמו מידות ומספר הזמנה.</p></div>
+      <div class="card feat"><span class="ic">⏰</span><h3>סדר לפי זמן</h3><p>מה שבאיחור מופיע ראשון ובאדום, ואחריו היום, מחר, השבוע, בהמשך ובלי תאריך.</p></div>
+      <div class="card feat"><span class="ic">📤</span><h3>שיתוף רשימה</h3><p>„שיתוף” שולח את מה שנשאר, למשל רשימת הסופר, בוואטסאפ או בכל אפליקציה אחרת.</p></div>
+      <div class="card feat"><span class="ic">📶</span><h3>גם בלי אינטרנט</h3><p>הכול נשמר במכשיר. כשהחיבור חוזר, השינויים נשלחים לשאר המשפחה.</p></div>
+    </div>
+  </section>
+
+  <section id="quick">
+    <h2>⚡ הוספה מהירה</h2>
+    <div class="card">
+      <p style="margin-top:0">כותבים בשורה העליונה ולוחצים +. האפליקציה מזהה תאריך ושעה מתוך הטקסט, ומתחת לשורה רואים מה היא הבינה לפני ששומרים.</p>
+      <div class="examples" style="margin-top:12px">
+        <div class="ex"><code>לשלם חשמל מחר 18:00</code><span>← מחר בשש בערב, עם תזכורת</span></div>
+        <div class="ex"><code>להתקשר לקבלן ביום שני</code><span>← יום שני הקרוב, בנושא בנייה</span></div>
+        <div class="ex"><code>ארנונה 15.11</code><span>← 15 בנובמבר</span></div>
+        <div class="ex"><code>תור לרופא ב-08:30</code><span>← היום או מחר ב־8:30</span></div>
+        <div class="ex"><code>כבל USB מאליאקספרס</code><span>← לנושא קניות מאליאקספרס, בלי תאריך</span></div>
+      </div>
+      <p class="muted">מילים שמזוהות: היום, מחר, מחרתיים, בשבוע הבא, ביום ראשון עד שבת, תאריך כמו 15.11, ושעה כמו 18:00 או „בשעה 9”. כשנמצאים בתוך נושא, המשימה נכנסת אליו. כדי להוסיף פרטים לפני השמירה לוחצים 📅.</p>
+    </div>
+  </section>
+
+  <section id="family">
+    <h2>👨‍👩‍👧 חיבור המשפחה</h2>
+    <div class="card">
+      <ol class="steps">
+        <li>במכשיר הראשון לוחצים על 👨‍👩‍👧 בראש המסך, ואז על „יצירת קוד משפחתי”.</li>
+        <li>לוחצים „שליחת הזמנה” ושולחים בוואטסאפ לבני המשפחה.</li>
+        <li>כל אחד פותח את הקישור מההזמנה. מי שמשתמש באפליקציה בטלפון לוחץ 👨‍👩‍👧 ומקליד את הקוד.</li>
+        <li>מומלץ שכל אחד יכתוב את השם שלו ב־⚙️ הגדרות. כך משימות שמשויכות לאחרים לא שולחות לו תזכורת.</li>
+      </ol>
+      <p class="muted">הנקודה הירוקה על 👨‍👩‍👧 אומרת שהמכשיר מסונכרן. הסנכרון קורה לבד כל כמה שניות, וגם בכל פעם שפותחים את האפליקציה. מי שמכיר את הקוד רואה את המשימות, אז שולחים אותו רק לבני המשפחה.</p>
+    </div>
+  </section>
+
+  <section id="reminders">
+    <h2>🔔 איך התזכורות עובדות</h2>
+    <div class="grid">
+      <div class="card"><h3>📱 בטלפון</h3><p>התראה של הטלפון, גם כשהאפליקציה סגורה ואחרי הפעלה מחדש. בפתיחה הראשונה צריך לאשר התראות.</p></div>
+      <div class="card"><h3>💻 במחשב ובדפדפן</h3><p>התראה מגיעה כשהאתר פתוח, גם אם הוא ברקע. לתזכורת שמגיעה בכל מקרה: בעריכת משימה לוחצים „📅 ליומן Google”.</p></div>
+    </div>
+    <div class="note"><b>חשוב:</b> משימה שמישהו אחר הוסיף נקלטת בטלפון שלך כשהאפליקציה נפתחת בו. רק מאותו רגע תגיע ממנה תזכורת. כדי לבדוק שההתראות עובדות: ⚙️ ← „בדיקה”.</div>
+  </section>
+
+  <section id="install">
+    <h2>🛠️ התקנה</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>📱 בטלפון אנדרואיד</h3>
+        <ol class="steps" style="margin-top:10px">
+          <li>מורידים את הקובץ מכפתור „הורדה” למעלה.</li>
+          <li>פותחים אותו מההורדות. אם מופיעה אזהרה: <b class="en">Settings</b> (הגדרות) ← <b class="en">Allow from this source</b> (לאפשר ממקור זה).</li>
+          <li>לוחצים <b class="en">Install</b> (התקנה).</li>
+          <li>בפתיחה הראשונה מאשרים התראות: <b class="en">Allow</b> (אישור).</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h3>💻 במחשב</h3>
+        <ol class="steps" style="margin-top:10px">
+          <li>פותחים את האתר בכרום או באדג׳.</li>
+          <li>לוחצים על סמל ההתקנה בצד שורת הכתובת: <b class="en">Install</b> (התקנה).</li>
+          <li>האתר נפתח בחלון משלו, ויש לו קיצור דרך בשולחן העבודה.</li>
+          <li>כשהדפדפן שואל על התראות, לוחצים <b class="en">Allow</b> (אישור).</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h3>🍏 באייפון</h3>
+        <p>אין אפליקציה להתקנה, אבל האתר עובד. בספארי לוחצים על כפתור השיתוף ואז <b class="en">Add to Home Screen</b> (הוספה למסך הבית).</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="tech">
+    <h2>⚙️ מאחורי הקלעים</h2>
+    <div class="card">
+      <table>
+        <tr><td>קוד המקור</td><td><a href="https://github.com/484963-ctrl/lo-lishkoach">github.com/484963-ctrl/lo-lishkoach</a>. פרויקט עצמאי, בלי קשר לאפליקציות אחרות.</td></tr>
+        <tr><td>האתר</td><td>GitHub Pages. מתעדכן לבד אחרי כל שינוי.</td></tr>
+        <tr><td>קובץ לטלפון</td><td>נבנה לבד ב־GitHub Actions אחרי כל שינוי, ומתפרסם באותו קישור הורדה.</td></tr>
+        <tr><td>שמירה משותפת</td><td>Supabase: טבלה <code>lo_lishkoach_families</code> ושתי פונקציות, <code>lo_lishkoach_get</code> ו־<code>lo_lishkoach_put</code>. אין גישה ישירה לטבלה, רק עם הקוד המשפחתי.</td></tr>
+        <tr><td>התראות בטלפון</td><td>תוסף <code>@capacitor/local-notifications</code>.</td></tr>
+        <tr><td>בתוך המכשיר</td><td>הנתונים נשמרים גם בדפדפן או בטלפון עצמו, ולכן האפליקציה עובדת בלי אינטרנט.</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <footer>🔔 לא לשכוח · נבנה למשפחה</footer>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+  const toast = t => { const el = document.getElementById('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2500); };
+  document.querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => {
+    try { await navigator.clipboard.writeText(b.dataset.copy); toast('הקישור הועתק'); } catch { prompt('העתקת הקישור:', b.dataset.copy); }
+  });
+  document.getElementById('shareInfo').onclick = async () => {
+    const url = 'https://484963-ctrl.github.io/lo-lishkoach/info/', text = '🔔 לא לשכוח – משימות ותזכורות למשפחה. כל המידע וההורדות:\n' + url;
+    if (navigator.share) { try { await navigator.share({text}); } catch {} }
+    else { try { await navigator.clipboard.writeText(url); toast('הקישור הועתק'); } catch { prompt('העתקת הקישור:', url); } }
+  };
+</script>
+</body>
+</html>
