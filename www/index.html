@@ -85,6 +85,18 @@
     .catic{flex:none;font-size:1.15em}
     .link{flex:none;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;text-decoration:none;font-size:1.1em}
     .link:active{background:var(--line)}
+    .link small{font-size:.6em;font-weight:700;margin-right:1px}
+    /* קישורים: עורך שורות (שם + כתובת) וסרגל קישורים קבועים בראש נושא */
+    .lrows{display:flex;flex-direction:column;gap:6px}
+    .lrow{display:flex;flex-wrap:wrap;gap:6px;background:var(--bg);border-radius:12px;padding:6px}
+    .lrow .field{flex:1 1 140px;min-width:0;padding:8px}
+    .lrow .lurl{flex-basis:100%}
+    .lrow a,.lrow button{flex:none;width:40px;height:40px;border:0;border-radius:10px;background:var(--surface);display:grid;place-items:center;text-decoration:none;font-size:1.05em}
+    .addlink{margin-top:6px;border:2px dashed var(--line);background:none;border-radius:12px;padding:9px;width:100%;font-weight:700;color:var(--accent-ink)}
+    .pins{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+    .pins a,.pins button{display:flex;align-items:center;gap:6px;border:0;border-radius:12px;padding:9px 12px;background:var(--surface);box-shadow:var(--shadow);text-decoration:none;color:var(--ink);font-weight:500;font-size:.92em;max-width:100%}
+    .pins a span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .pins button{color:var(--accent-ink);background:var(--accent-soft);box-shadow:none}
 
     .empty{text-align:center;color:var(--muted);padding:48px 20px;line-height:1.6}
     .empty b{display:block;font-size:2.4em;margin-bottom:6px}
@@ -209,8 +221,9 @@
       <label for="fWho">באחריות</label>
       <input class="field" id="fWho" list="people" placeholder="כולם">
       <datalist id="people"></datalist>
-      <label for="fLink">קישור (הזמנה, מעקב משלוח, תוכנית)</label>
-      <input class="field" id="fLink" type="url" dir="ltr" placeholder="https://">
+      <label>קישורים (תיקייה בדרייב, תוכנית, הזמנה, מעקב משלוח...)</label>
+      <div class="lrows" id="fLinks"></div>
+      <button type="button" class="addlink" id="fAddLink">＋ הוספת קישור</button>
       <label class="lab" for="fNotes">הערות <button type="button" id="notesOpen">⤢ חלון גדול</button></label>
       <textarea id="fNotes" placeholder="פרטים, מידות, מספר הזמנה..."></textarea>
       <div class="row">
@@ -222,6 +235,17 @@
         <button type="button" class="danger" id="fDel">מחיקה</button>
       </div>
     </form>
+  </dialog>
+
+  <!-- קישורים קבועים של נושא: מופיעים בראש הנושא -->
+  <dialog id="pinDlg">
+    <div class="sheet">
+      <h3 id="pinTitle">קישורים קבועים</h3>
+      <p class="status" style="margin-top:0">קישורים שתמיד מופיעים בראש הנושא, למשל תיקיית הפרויקט ב־Google Drive.</p>
+      <div class="lrows" id="pinLinks"></div>
+      <button type="button" class="addlink" id="pinAdd">＋ הוספת קישור</button>
+      <div class="row"><button class="primary" id="pinSave">שמירה</button><button id="pinCancel">ביטול</button></div>
+    </div>
   </dialog>
 
   <!-- הערות בחלון גדול, לטקסט ארוך -->
@@ -306,7 +330,7 @@
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const SITE = 'https://484963-ctrl.github.io/lo-lishkoach/';
   // מספר הגרסה: מעלים אותו בכל עדכון. מופיע בהגדרות, בדף המידע ובשם הקובץ לטלפון
-  const APP_VERSION = '1.6';
+  const APP_VERSION = '1.7';
 
   // נושאים לדוגמה. מזהה קבוע, כדי שיהיו זהים בכל מכשיר חדש. אפשר לשנות, למחוק ולהוסיף בהגדרות
   const DEFAULT_CATS = [
@@ -399,6 +423,57 @@
     img.className = 'cimg'; img.alt = ''; img.src = c.img;
     return img;
   }
+  // ----- קישורים: לכל משימה ולכל נושא, כל קישור עם שם -----
+  // משימות מגרסאות קודמות שמרו קישור אחד בשדה link
+  const linksOf = o => (o.links || (o.link ? [{name: '', url: o.link}] : [])).filter(l => /^https?:\/\//.test(l.url || ''));
+  const fixUrl = u => { u = u.trim(); return !u ? '' : /^https?:\/\//i.test(u) ? u : 'https://' + u; };
+  const LINK_KINDS = [
+    [/drive\.google\.com\/drive\/folders|drive\.google\.com\/drive\/u\/\d+\/folders/, '📁', 'תיקייה ב־Google Drive'],
+    [/drive\.google\.com/, '📁', 'Google Drive'],
+    [/docs\.google\.com\/spreadsheets/, '📊', 'גיליון Google'],
+    [/docs\.google\.com\/document/, '📄', 'מסמך Google'],
+    [/docs\.google\.com\/presentation/, '📽️', 'מצגת Google'],
+    [/aliexpress\.|a\.aliexpress/, '📦', 'AliExpress'],
+    [/photos\.google\.com|photos\.app\.goo\.gl/, '🖼️', 'Google Photos'],
+    [/dropbox\.com/, '📁', 'Dropbox'],
+    [/onedrive\.live\.com|1drv\.ms|sharepoint\.com/, '📁', 'OneDrive'],
+    [/youtube\.com|youtu\.be/, '▶️', 'YouTube'],
+    [/maps\.google|goo\.gl\/maps|maps\.app\.goo\.gl|waze\.com/, '📍', 'מפה'],
+    [/wa\.me|whatsapp\.com/, '💬', 'וואטסאפ'],
+    [/\.pdf(\?|$)/i, '📄', 'קובץ PDF'],
+  ];
+  function linkInfo(l) {
+    const k = LINK_KINDS.find(([re]) => re.test(l.url));
+    let host = '';
+    try { host = new URL(l.url).hostname.replace(/^www\./, ''); } catch {}
+    return {icon: k ? k[1] : '🔗', name: l.name || (k ? k[2] : host || l.url)};
+  }
+  function linkA(l) {
+    const a = document.createElement('a'), i = linkInfo(l);
+    a.href = l.url; a.target = '_blank'; a.rel = 'noopener'; a.title = l.url;
+    a.append(i.icon + ' ');
+    const sp = document.createElement('span'); sp.textContent = i.name; a.append(sp);
+    return a;
+  }
+  // עורך שורות: שם (לא חובה) וכתובת, עם כפתור פתיחה ומחיקה
+  function linkRows(box, links) {
+    box.innerHTML = '';
+    for (const l of links) addLinkRow(box, l);
+  }
+  function addLinkRow(box, l = {name: '', url: ''}) {
+    const r = document.createElement('div');
+    r.className = 'lrow';
+    r.innerHTML = '<input class="field lname" placeholder="שם (למשל: תיקיית התוכניות)" aria-label="שם הקישור"><a target="_blank" rel="noopener" aria-label="פתיחת הקישור">↗</a><button type="button" aria-label="מחיקת הקישור">🗑️</button><input class="field lurl" type="url" dir="ltr" placeholder="https://drive.google.com/..." aria-label="כתובת הקישור">';
+    const [name, open, del, url] = r.children;
+    name.value = l.name || ''; url.value = l.url || '';
+    const sync = () => { const u = fixUrl(url.value); open.href = u || '#'; open.style.visibility = u ? 'visible' : 'hidden'; if (!name.value) name.placeholder = u ? linkInfo({url: u}).name : 'שם (למשל: תיקיית התוכניות)'; };
+    url.addEventListener('input', sync); sync();
+    del.onclick = () => r.remove();
+    box.append(r);
+    return r;
+  }
+  const readLinks = box => [...box.querySelectorAll('.lrow')].map(r => ({name: r.querySelector('.lname').value.trim(), url: fixUrl(r.querySelector('.lurl').value)})).filter(l => l.url);
+
   const viewTasks = () => state.view === 'all' ? state.tasks : state.tasks.filter(t => catOf(t.cat).id === state.view);
   const people = () => [...new Set([...Object.keys(state.people), ...state.tasks.map(t => t.who).filter(Boolean), me].filter(Boolean))];
 
@@ -447,6 +522,7 @@
     const main = $('list');
     main.innerHTML = '';
     notifBanner(main);
+    if (!all) main.append(pinsBar(cat));
     const open = list.filter(t => !t.done), done = list.filter(t => t.done);
     if (!list.length) {
       main.insertAdjacentHTML('beforeend', all
@@ -475,6 +551,35 @@
     }
   }
 
+  // קישורים קבועים בראש נושא
+  function pinsBar(cat) {
+    const bar = document.createElement('div');
+    bar.className = 'pins';
+    const links = linksOf(cat);
+    links.forEach(l => bar.append(linkA(l)));
+    const b = document.createElement('button');
+    b.dataset.act = 'pins';
+    b.textContent = links.length ? '✏️' : '📎 קישור קבוע לנושא (למשל תיקייה בדרייב)';
+    b.ariaLabel = 'עריכת הקישורים הקבועים';
+    bar.append(b);
+    return bar;
+  }
+  let pinCat = null;
+  function openPins(cat) {
+    pinCat = cat;
+    $('pinTitle').textContent = `📎 קישורים קבועים – ${cat.name}`;
+    linkRows($('pinLinks'), linksOf(cat));
+    if (!linksOf(cat).length) addLinkRow($('pinLinks'));
+    $('pinDlg').showModal();
+  }
+  $('pinAdd').onclick = () => addLinkRow($('pinLinks')).querySelector('.lurl').focus();
+  $('pinCancel').onclick = () => $('pinDlg').close();
+  $('pinSave').onclick = () => {
+    pinCat.links = readLinks($('pinLinks'));
+    delete pinCat.link;
+    save(); render(); $('pinDlg').close();
+  };
+
   function section(cls, label, tasks, all) {
     const sec = document.createElement('section');
     sec.className = 'group ' + cls;
@@ -501,10 +606,17 @@
     if (t.done && t.doneBy) tag('✓ ' + t.doneBy);
     if (t.notes) tag('📝 ' + (t.notes.length > 30 ? t.notes.slice(0, 30) + '…' : t.notes));
     if (!meta.children.length) meta.remove();
-    if (/^https?:\/\//.test(t.link || '')) {
+    // קישור אחד: נפתח ישר. כמה קישורים: נפתחת המשימה, ושם כל הקישורים
+    const links = linksOf(t);
+    if (links.length === 1) {
       const a = document.createElement('a');
-      a.className = 'link'; a.href = t.link; a.target = '_blank'; a.rel = 'noopener'; a.textContent = '🔗'; a.ariaLabel = 'פתיחת הקישור';
+      a.className = 'link'; a.href = links[0].url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = linkInfo(links[0]).icon; a.title = linkInfo(links[0]).name; a.ariaLabel = 'פתיחת הקישור';
       el.append(a);
+    } else if (links.length > 1) {
+      const b = document.createElement('button');
+      b.className = 'link'; b.dataset.act = 'edit'; b.style.border = '0'; b.style.background = 'none';
+      b.innerHTML = `🔗<small>${links.length}</small>`; b.ariaLabel = `${links.length} קישורים`;
+      el.append(b);
     }
     return el;
   }
@@ -553,7 +665,7 @@
     const v = $('text').value.trim();
     if (!v) return openEdit(null);
     const q = parseQuick(v);
-    state.tasks.push({id: uid(), title: q.title, cat: guessCat(q.title), due: q.due, time: q.time, remind: 0, repeat: '', who: '', link: '', notes: '', done: false});
+    state.tasks.push({id: uid(), title: q.title, cat: guessCat(q.title), due: q.due, time: q.time, remind: 0, repeat: '', who: '', links: [], notes: '', done: false});
     save(); render();
     $('text').value = ''; quickHint(); $('text').focus();
     if (q.due) askNotifOnce();
@@ -573,7 +685,7 @@
     $('fDate').value = q.due || ''; $('fTime').value = q.time || '';
     $('fRemind').value = String(t ? t.remind : 0);
     $('fRepeat').value = t?.repeat || '';
-    $('fWho').value = t?.who || ''; $('fLink').value = t?.link || ''; $('fNotes').value = t?.notes || '';
+    $('fWho').value = t?.who || ''; linkRows($('fLinks'), t ? linksOf(t) : []); $('fNotes').value = t?.notes || '';
     requestAnimationFrame(growNotes);
     $('fDel').hidden = !t;
     fillPeople(); editChanged();
@@ -582,7 +694,7 @@
   }
   function formTask() {
     return {title: $('fTitle').value.trim(), cat: $('fCat').value, due: $('fDate').value, time: $('fDate').value ? $('fTime').value : '',
-      remind: +$('fRemind').value, repeat: $('fDate').value ? $('fRepeat').value : '', who: $('fWho').value.trim(), link: $('fLink').value.trim(), notes: $('fNotes').value.trim()};
+      remind: +$('fRemind').value, repeat: $('fDate').value ? $('fRepeat').value : '', who: $('fWho').value.trim(), links: readLinks($('fLinks')), notes: $('fNotes').value.trim()};
   }
   function editChanged() {
     const f = formTask();
@@ -610,13 +722,14 @@
     const f = formTask();
     if (!f.title) return $('fTitle').focus();
     if (f.who) state.people[f.who] = 1;
-    if (editing) Object.assign(editing, f);
+    if (editing) { Object.assign(editing, f); delete editing.link; }
     else state.tasks.push({id: uid(), ...f, done: false});
     save(); render(); $('edit').close();
     $('text').value = ''; quickHint();
     if (f.due && f.remind >= 0) askNotifOnce();
   };
   $('fCancel').onclick = () => $('edit').close();
+  $('fAddLink').onclick = () => addLinkRow($('fLinks')).querySelector('.lurl').focus();
   // שדה ההערות גדל לפי הטקסט, ו„חלון גדול” פותח אותו כמעט על כל המסך
   function growNotes() {
     const n = $('fNotes');
@@ -648,7 +761,7 @@
       const e = new Date(s.getTime() + 36e5), f = x => isoDate(x).replace(/-/g, '') + 'T' + pad(x.getHours()) + pad(x.getMinutes()) + '00';
       dates = f(s) + '/' + f(e);
     } else dates = d + '/' + addDays(t.due, 1).replace(/-/g, '');
-    const details = [t.notes, t.link].filter(Boolean).join('\n');
+    const details = [t.notes, ...linksOf(t).map(l => (l.name ? l.name + ': ' : '') + l.url)].filter(Boolean).join('\n');
     const rec = t.repeat ? '&recur=' + encodeURIComponent('RRULE:FREQ=' + {day: 'DAILY', week: 'WEEKLY', month: 'MONTHLY', year: 'YEARLY'}[t.repeat]) : '';
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(t.title)}&dates=${dates}&details=${encodeURIComponent(details)}${rec}`;
   }
@@ -672,6 +785,7 @@
     const btn = e.target.closest('[data-act]');
     if (!btn) return;
     if (btn.dataset.act === 'showdone') { showDone = !showDone; return render(); }
+    if (btn.dataset.act === 'pins') return openPins(catOf(state.view));
     if (btn.dataset.act === 'notif') return enableNotif();
     if (btn.dataset.act === 'notifx') { try { localStorage.setItem('lo-lishkoach-nonotif', '1'); } catch {} return render(); }
     const t = state.tasks.find(x => x.id === btn.closest('.item')?.dataset.id);
