@@ -112,6 +112,11 @@
     .crow{display:flex;flex-wrap:wrap;gap:6px;background:var(--bg);border-radius:12px;padding:6px}
     .crow .field{flex:1 1 120px;min-width:0;padding:8px}
     .crow .cname{flex-basis:calc(100% - 46px)}
+    .crow .cmail{flex-basis:100%}
+    .crow .lbl{flex:1 1 140px;min-width:0;display:flex;flex-direction:column;gap:3px;font-size:.75em;font-weight:700;color:var(--muted)}
+    .crow .lbl{margin:0}
+    .crow .lbl .field{flex:none;font-size:1.33em;font-weight:400;color:var(--ink)}
+    .crow .lbl button{align-self:flex-start;border:0;background:none;color:var(--accent-ink);font-weight:700;font-size:1em;padding:0}
     .crow .acts{flex-basis:100%;display:flex;gap:6px}
     .crow .acts a{flex:1;border-radius:10px;padding:8px 4px;background:var(--surface);text-align:center;text-decoration:none;color:var(--ink);font-weight:700;font-size:.85em}
     .crow .acts a[hidden]{display:none}
@@ -397,7 +402,7 @@
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const SITE = 'https://484963-ctrl.github.io/lo-lishkoach/';
   // מספר הגרסה: מעלים אותו בכל עדכון. מופיע בהגדרות, בדף המידע ובשם הקובץ לטלפון
-  const APP_VERSION = '1.9';
+  const APP_VERSION = '1.10';
 
   // נושאים לדוגמה. מזהה קבוע, כדי שיהיו זהים בכל מכשיר חדש. אפשר לשנות, למחוק ולהוסיף בהגדרות
   const DEFAULT_CATS = [
@@ -648,12 +653,15 @@
   const telHref = ph => 'tel:' + ph.replace(/[^\d+]/g, '');
   // וואטסאפ צריך מספר בינלאומי: 050-1234567 → 972501234567
   const waHref = ph => { let d = ph.replace(/\D/g, ''); if (d.startsWith('00')) d = d.slice(2); else if (d.startsWith('0')) d = '972' + d.slice(1); return 'https://wa.me/' + d; };
-  const contactsOf = o => (o.contacts || []).filter(c => c.phone || c.email);
+  // מספר וואטסאפ: שדה נפרד. אנשי קשר מגרסה 1.9 (בלי השדה) – הטלפון, אם הוא נייד
+  const waOf = c => c.whatsapp !== undefined ? c.whatsapp : /^(05|\+?9725|009725)/.test((c.phone || '').replace(/[\s-]/g, '')) ? c.phone : '';
+  const contactsOf = o => (o.contacts || []).filter(c => c.phone || c.email || c.whatsapp);
   function contactActs(c, cls = '') {
     const box = document.createElement('div');
     box.className = 'acts';
     const mk = (href, text, k) => { const a = document.createElement('a'); a.href = href; a.textContent = text; if (k) a.className = k; if (/^https/.test(href)) { a.target = '_blank'; a.rel = 'noopener'; } box.append(a); };
-    if (c.phone) { mk(telHref(c.phone), '📞 חיוג'); mk(waHref(c.phone), '💬 וואטסאפ', 'wa'); }
+    if (c.phone) mk(telHref(c.phone), '📞 חיוג');
+    if (waOf(c)) mk(waHref(waOf(c)), '💬 וואטסאפ', 'wa');
     if (c.email) mk('mailto:' + c.email.trim(), '✉️ מייל', 'ml');
     return box;
   }
@@ -661,23 +669,31 @@
   function addContactRow(box, c = {}) {
     const r = document.createElement('div');
     r.className = 'crow';
-    r.innerHTML = '<input class="field cname" placeholder="שם (למשל: משה הקבלן)" aria-label="שם"><button type="button" aria-label="מחיקת איש הקשר">🗑️</button><input class="field cphone" type="tel" dir="ltr" placeholder="050-0000000" aria-label="טלפון"><input class="field cmail" type="email" dir="ltr" placeholder="name@gmail.com" aria-label="מייל"><div class="acts"><a data-k="tel">📞 חיוג</a><a data-k="wa" target="_blank" rel="noopener">💬 וואטסאפ</a><a data-k="mail">✉️ מייל</a></div>';
-    const [name, del, phone, mail] = r.children, acts = r.querySelector('.acts');
-    name.value = c.name || ''; phone.value = c.phone || ''; mail.value = c.email || '';
+    r.innerHTML = '<input class="field cname" placeholder="שם (למשל: משה הקבלן)" aria-label="שם"><button type="button" aria-label="מחיקת איש הקשר">🗑️</button>'
+      + '<label class="lbl">📞 טלפון<input class="field cphone" type="tel" dir="ltr" placeholder="03-0000000"></label>'
+      + '<label class="lbl">💬 וואטסאפ<input class="field cwa" type="tel" dir="ltr" placeholder="050-0000000"><button type="button" class="same">= אותו מספר כמו הטלפון</button></label>'
+      + '<input class="field cmail" type="email" dir="ltr" placeholder="✉️ name@gmail.com" aria-label="מייל">'
+      + '<div class="acts"><a data-k="tel">📞 חיוג</a><a data-k="wa" target="_blank" rel="noopener">💬 וואטסאפ</a><a data-k="mail">✉️ מייל</a></div>';
+    const name = r.querySelector('.cname'), del = r.children[1], phone = r.querySelector('.cphone'), wa = r.querySelector('.cwa'), mail = r.querySelector('.cmail'), same = r.querySelector('.same'), acts = r.querySelector('.acts');
+    name.value = c.name || ''; phone.value = c.phone || ''; wa.value = waOf(c) || ''; mail.value = c.email || '';
     const upd = () => {
-      const ph = phone.value.trim(), em = mail.value.trim();
-      const [tel, wa, ml] = acts.children;
-      tel.hidden = wa.hidden = !ph; ml.hidden = !em;
-      if (ph) { tel.href = telHref(ph); wa.href = waHref(ph); }
-      if (em) ml.href = 'mailto:' + em;
-      acts.hidden = !ph && !em;
+      const ph = phone.value.trim(), w = wa.value.trim(), em = mail.value.trim();
+      const [aTel, aWa, aMl] = acts.children;
+      aTel.hidden = !ph; aWa.hidden = !w; aMl.hidden = !em;
+      if (ph) aTel.href = telHref(ph);
+      if (w) aWa.href = waHref(w);
+      if (em) aMl.href = 'mailto:' + em;
+      acts.hidden = !ph && !w && !em;
+      same.hidden = !ph || w === ph;
     };
-    phone.addEventListener('input', upd); mail.addEventListener('input', upd); upd();
+    same.onclick = e => { e.preventDefault(); wa.value = phone.value.trim(); upd(); };
+    for (const el of [phone, wa, mail]) el.addEventListener('input', upd);
+    upd();
     del.onclick = () => r.remove();
     box.append(r);
     return r;
   }
-  const readContacts = box => [...box.querySelectorAll('.crow')].map(r => ({name: r.querySelector('.cname').value.trim(), phone: r.querySelector('.cphone').value.trim(), email: r.querySelector('.cmail').value.trim()})).filter(c => c.phone || c.email);
+  const readContacts = box => [...box.querySelectorAll('.crow')].map(r => ({name: r.querySelector('.cname').value.trim(), phone: r.querySelector('.cphone').value.trim(), whatsapp: r.querySelector('.cwa').value.trim(), email: r.querySelector('.cmail').value.trim()})).filter(c => c.phone || c.whatsapp || c.email);
   function openCalls(title, list) {
     $('callTitle').textContent = '📞 ' + title;
     const box = $('calls');
@@ -685,7 +701,7 @@
     for (const c of list) {
       const d = document.createElement('div');
       d.className = 'call';
-      const b = document.createElement('b'); b.textContent = c.name || c.phone || c.email; d.append(b);
+      const b = document.createElement('b'); b.textContent = c.name || c.phone || waOf(c) || c.email; d.append(b);
       d.append(contactActs(c));
       box.append(d);
     }
@@ -866,9 +882,10 @@
     for (const c of contactsOf(cat)) {
       const ct = document.createElement('div');
       ct.className = 'ct';
-      const n = document.createElement('span'); n.textContent = '👤 ' + (c.name || c.phone || c.email); ct.append(n);
+      const n = document.createElement('span'); n.textContent = '👤 ' + (c.name || c.phone || waOf(c) || c.email); ct.append(n);
       const mk = (href, text, label) => { const a = document.createElement('a'); a.href = href; a.textContent = text; a.ariaLabel = label; if (/^https/.test(href)) { a.target = '_blank'; a.rel = 'noopener'; } ct.append(a); };
-      if (c.phone) { mk(telHref(c.phone), '📞', 'חיוג'); mk(waHref(c.phone), '💬', 'וואטסאפ'); }
+      if (c.phone) mk(telHref(c.phone), '📞', 'חיוג');
+      if (waOf(c)) mk(waHref(waOf(c)), '💬', 'וואטסאפ');
       if (c.email) mk('mailto:' + c.email, '✉️', 'מייל');
       bar.append(ct);
     }
