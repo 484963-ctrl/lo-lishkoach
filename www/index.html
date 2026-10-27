@@ -139,6 +139,33 @@
     .receipt p{margin:0 0 10px;color:var(--muted);font-size:.9em}
     .receipt .twobtn button{flex:1;border:0;border-radius:14px;padding:16px 6px;font-weight:700;font-size:1.05em;background:var(--bg)}
     .receipt .twobtn .primary{background:var(--accent);color:#fff}
+    /* קניות: תמונת מוצר, כמות, מחלקות בסופר */
+    .thumb{flex:none;position:relative;width:44px;height:44px;border:0;padding:0;border-radius:10px;overflow:hidden;background:var(--accent-soft);display:grid;place-items:center;font-size:1.3em}
+    .thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+    .item.done .thumb{opacity:.45;filter:grayscale(1)}
+    .qty{flex:none;border:0;background:var(--accent-soft);color:var(--accent-ink);border-radius:8px;padding:4px 9px;font-weight:700;font-size:.85em;margin-left:4px}
+    .qty.one{background:none;color:var(--muted);font-size:1.1em;padding:4px 10px}
+    .aislepick{position:relative;width:50px;flex:none;border:2px solid var(--line);background:var(--surface);border-radius:12px;display:grid;place-items:center;font-size:1.3em}
+    .aislepick select{position:absolute;inset:0;opacity:0;width:100%}
+    .shopbar{margin-top:12px;display:flex;align-items:center;gap:10px;font-size:.85em;color:var(--muted)}
+    .shopbar .bar{flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+    .shopbar .bar i{display:block;height:100%;background:var(--accent);transition:width .25s}
+    .shopbar button{border:0;border-radius:10px;padding:8px 12px;background:var(--accent);color:#fff;font-weight:700}
+    /* חלון תמונת מוצר */
+    .pic{aspect-ratio:16/10;background:var(--accent-soft);display:grid;place-items:center;font-size:5em;position:relative}
+    .pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+    #photo .sheet{padding-top:12px}
+    .credit{font-size:.75em;color:var(--muted);min-height:1em}
+    .credit a{color:inherit}
+    .find{display:flex;gap:6px;margin-top:12px}
+    .find input{flex:1;min-width:0;border:2px solid var(--line);background:var(--surface);border-radius:12px;padding:10px;outline:none}
+    .find input:focus{border-color:var(--accent)}
+    .find button{flex:none;border:0;border-radius:12px;padding:10px 14px;font-weight:700}
+    #findStatus{white-space:pre-line}
+    .results{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+    .results button{display:flex;flex-direction:column;gap:4px;padding:4px;border:2px solid var(--line);border-radius:12px;background:var(--surface);font-size:.72em;line-height:1.2;text-align:center;color:var(--ink)}
+    .results img{width:100%;aspect-ratio:1;object-fit:contain;background:#fff;border-radius:8px}
+    .results span{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
     .fbox.drag{outline:3px dashed var(--accent);outline-offset:4px;border-radius:12px}
     .pinnote{width:100%;margin-top:8px;background:var(--surface);box-shadow:var(--shadow);border-radius:14px;padding:12px 14px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5;font-size:.93em;cursor:pointer}
     .pinnote span{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
@@ -215,6 +242,7 @@
     <div class="chips" id="chips" role="tablist"></div>
     <form class="add" id="add" autocomplete="off">
       <input id="text" placeholder="מה לא לשכוח?" enterkeyhint="done" aria-label="משימה חדשה">
+      <label class="aislepick" id="aislePick" title="מחלקה בסופר" hidden><span id="aisleIcon">🛒</span><select id="aisle" aria-label="מחלקה בסופר"></select></label>
       <button type="button" id="more" aria-label="עם תאריך ופרטים">📅</button>
       <button class="go" aria-label="הוספה">+</button>
     </form>
@@ -235,6 +263,10 @@
       <input class="field" id="fTitle" placeholder="מה צריך לעשות או לקנות?" aria-label="שם המשימה" required>
       <label for="fCat">נושא</label>
       <select id="fCat"></select>
+      <div class="two" id="shopFields" hidden>
+        <div><label for="fQty">כמות</label><input class="field" id="fQty" type="number" min="1" max="99" inputmode="numeric"></div>
+        <div><label for="fAisle">מחלקה בסופר</label><select id="fAisle"></select></div>
+      </div>
       <div class="two">
         <div><label for="fDate">תאריך</label><input class="field" type="date" id="fDate"></div>
         <div><label for="fTime">שעה</label><input class="field" type="time" id="fTime"></div>
@@ -307,6 +339,59 @@
     </div>
   </dialog>
 
+  <!-- תמונת מוצר: צילום, גלריה, גוגל תמונות, הדבקה, חיפוש במאגרים, ברקוד -->
+  <dialog id="photo">
+    <div class="pic" id="picBig"></div>
+    <div class="sheet">
+      <h3 id="picName"></h3>
+      <div class="credit" id="picCredit"></div>
+      <div class="row">
+        <button class="primary" id="shoot">📷 צילום</button>
+        <button id="gallery">🖼️ מהגלריה</button>
+      </div>
+      <div class="row">
+        <button id="google">🌐 חיפוש בגוגל תמונות</button>
+        <button id="pasteBtn">📋 הדבקת תמונה</button>
+      </div>
+      <div class="credit" id="googleHint" hidden>בגוגל: לוחצים לחיצה ארוכה (או קליק ימני) על התמונה ← „העתקת תמונה” או „העתקת כתובת התמונה”, וחוזרים לכאן ל„הדבקת תמונה”.</div>
+      <form class="find" id="urlForm" hidden>
+        <input id="urlText" dir="ltr" inputmode="url" aria-label="כתובת תמונה" placeholder="מדביקים כאן את כתובת התמונה">
+        <button class="primary">שמירה</button>
+      </form>
+      <div class="credit deskhint">במחשב אפשר גם לגרור תמונה לכאן, או ללחוץ Ctrl+V אחרי העתקת תמונה</div>
+      <form class="find" id="find">
+        <input id="findText" enterkeyhint="search" aria-label="חיפוש מוצר" placeholder="שם המוצר והחברה, או מספר הברקוד">
+        <button class="primary" aria-label="חיפוש">🔎</button>
+      </form>
+      <div class="row"><button id="scan">▥ סריקת ברקוד</button></div>
+      <div class="status" id="findStatus"></div>
+      <div class="results" id="results"></div>
+      <div class="row">
+        <button id="unpic" hidden>הסרת התמונה שלי</button>
+        <button id="picClose">סגירה</button>
+      </div>
+    </div>
+  </dialog>
+  <input type="file" id="fileShoot" accept="image/*" capture="environment" hidden>
+  <input type="file" id="fileGallery" accept="image/*" hidden>
+  <input type="file" id="fileBarcode" accept="image/*" capture="environment" hidden>
+
+  <!-- ייבוא מרשימת הקניות הישנה -->
+  <dialog id="importDlg">
+    <div class="sheet">
+      <h3>🛒 ייבוא מרשימת הקניות</h3>
+      <p>הפריטים, רשימת השבת והתמונות עוברים לכאן, לנושאים „קניות בסופר” ו„שבת”. ברשימת הקניות עצמה לא נמחק כלום.</p>
+      <label for="importCode">קוד הסנכרון של רשימת הקניות (☁️ ברשימת הקניות)</label>
+      <form class="join" id="importForm">
+        <input class="field codein" id="importCode" autocomplete="off" autocapitalize="characters" placeholder="XXXX-XXXX-XXXX">
+        <button class="primary" style="background:var(--accent);color:#fff">ייבוא</button>
+      </form>
+      <div class="row" id="importLocalRow" hidden><button id="importLocal">📱 ייבוא מהרשימה שבמכשיר הזה</button></div>
+      <div class="status" id="importStatus"></div>
+      <div class="row"><button id="importClose">סגירה</button></div>
+    </div>
+  </dialog>
+
   <!-- אנשי קשר של משימה: חיוג, וואטסאפ, מייל -->
   <dialog id="callDlg">
     <div class="sheet">
@@ -335,6 +420,8 @@
       <h3>⚙️ הגדרות</h3>
       <label for="myName">השם שלי (כדי שתזכורות של משימות של אחרים לא יגיעו אליי)</label>
       <input class="field" id="myName" list="people" placeholder="למשל: אמא">
+      <label>רשימת הקניות הישנה</label>
+      <div class="row" style="margin-top:0"><button id="importShop">🛒 ייבוא מרשימת הקניות</button></div>
       <label>התראות</label>
       <div class="status" id="notifState"></div>
       <div class="row"><button id="notifBtn" class="primary">הפעלת התראות</button><button id="notifTest">בדיקה</button></div>
@@ -402,7 +489,7 @@
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const SITE = 'https://484963-ctrl.github.io/lo-lishkoach/';
   // מספר הגרסה: מעלים אותו בכל עדכון. מופיע בהגדרות, בדף המידע ובשם הקובץ לטלפון
-  const APP_VERSION = '1.10';
+  const APP_VERSION = '2.0';
 
   // נושאים לדוגמה. מזהה קבוע, כדי שיהיו זהים בכל מכשיר חדש. אפשר לשנות, למחוק ולהוסיף בהגדרות
   const DEFAULT_CATS = [
@@ -467,6 +554,16 @@
     state.gone ||= {}; state.people ||= {};
     // נושא „קבלות” נוסף בגרסה 1.9. מי שמחק אותו – לא חוזר
     if (!state.cats.some(c => c.id === 'receipts') && !state.gone.receipts) state.cats.push({id: 'receipts', icon: '🧾', name: 'קבלות', u: 0});
+    // נושא „שבת” (מרשימת הקניות) נוסף בגרסה 2.0, עם רשימה קבועה לדוגמה. מזהים קבועים, כדי שמכשיר חדש לא יכפיל
+    if (!state.cats.some(c => c.id === 'shabbat') && !state.gone.shabbat) {
+      const at = state.cats.findIndex(c => c.id === 'super');
+      state.cats.splice(at < 0 ? state.cats.length : at + 1, 0, {id: 'shabbat', icon: '🕯️', name: 'שבת', u: 0});
+      SHABBAT_DEFAULT.forEach(([title, qty, aisle], i) => {
+        if (!state.tasks.some(t => t.id === '0sh' + i) && !state.gone['0sh' + i])
+          state.tasks.push({id: '0sh' + i, title, cat: 'shabbat', qty, aisle, due: '', time: '', remind: -1, repeat: '', who: '', links: [], notes: '', done: false, u: 0});
+      });
+    }
+    state.history ||= {}; state.photos ||= {}; state.photoTimes ||= {};
     if (!state.cats.length) state.cats = DEFAULT_CATS.map(c => ({...c, u: 0}));
     rememberSaved();
   }
@@ -792,6 +889,387 @@
   $('rcptCam').onchange = e => { const f = [...e.target.files]; e.target.value = ''; addReceipts(f); };
   $('rcptFile').onchange = e => { const f = [...e.target.files]; e.target.value = ''; addReceipts(f); };
 
+  // =================== קניות (מרשימת הקניות) ===================
+  // בנושאי „קניות בסופר” ו„שבת”: כמות, מחלקות לפי סדר המעברים בסופר, ותמונת מוצר
+  const SHOP = new Set(['super', 'shabbat']);
+  const isShop = id => SHOP.has(id);
+  const AISLES = [
+    ['veg','🥬','ירקות ופירות',['עגבני','מלפפ','בצל','שום','תפוח','תפו"א','גזר','חסה','פלפל','לימון','בננ','אבוקדו','תפוז','ענב','אבטיח','מלון','קישוא','חציל','כרוב','פטרוזיליה','כוסברה','שמיר','נענע','פירות','ירקות','בטטה','תות','אגס','קלמנטינ','פטריות','סלק']],
+    ['dairy','🥛','חלב וביצים',['חלב','גבינ','יוגורט','לבן','שמנת','חמאה','ביצ','קוטג','מעדנ','צהובה','בולגרית','לאבנה','פודינג']],
+    ['bread','🍞','לחם ומאפים',['לחם','חל','פיתות','פיתה','לחמני','בגט','טורטי','קרקר','עוגה','עוגות','עוגיות','בורקס','רוגלך','פריכיות']],
+    ['meat','🍗','בשר ודגים',['עוף','בשר','שניצל','חזה','כרעיים','פרגי','טחון','נקניק','דג','סלמון','טונה','הודו','קבב','המבורגר','כבד','שוקיים']],
+    ['pantry','🥫','מזווה',['אורז','פסטה','קמח','סוכר','מלח','שמן','רוטב','קטשופ','מיונז','חומוס','טחינה','שימור','תירס','אפונה','קפה','תה','דבש','ריבה','שוקולד למריחה','קורנפלקס','דגני','פתיתים','קוסקוס','עדשים','שעועית','תבלינ','פפריקה','כמון','חומץ','ממרח','סלט','מטבוחה','חמוצים','זיתים','אבקת']],
+    ['frozen','🧊','קפואים',['קפוא','גלידה','ארטיק','פיצה','בצק','שניצלונ','אצבעות']],
+    ['drinks','🥤','שתייה',['מים','סודה','קולה','מיץ','בירה','יין','תירוש','שתיי','פטל','משקה','ספרייט']],
+    ['snacks','🍫','חטיפים ומתוקים',['במבה','ביסלי','חטיף','שוקולד','סוכרי','צ\'יפס','דובונים','וופל','פופקורן','גרעינים','בוטנים','אגוזים','שקדים']],
+    ['clean','🧽','ניקיון וחד״פ',['סבון כלים','אקונומיקה','נוזל','מטלי','ספוג','שקיות','נייר כסף','נייר אפייה','ניילון','מפיות','צלחות','כוסות','סכו"ם','חד פעמי','אבקת כביסה','מרכך','סנו','מגבונ','נייר טואלט','נייר סופג','מטהר','נרות']],
+    ['care','🧴','טואלטיקה ופארם',['שמפו','סבון','משחת שיניים','מברשת','דאודורנט','קרם','תחבושות','טמפונ','גילוח','צמר גפן','אקמול','פלסטר','ויטמינ']],
+    ['baby','👶','תינוקות',['חיתול','מטרנה','סימילאק','דייסה','מוצץ','בקבוק']],
+    ['other','🛒','שונות',[]],
+  ];
+  const AISLE = Object.fromEntries(AISLES.map(([id, icon, label]) => [id, {icon, label}]));
+  // פריט בלי מחלקה (למשל שנוסף לפני גרסה 2.0): לפי המילים בשם
+  const aisleOf = t => AISLE[t.aisle] ? t.aisle : guessAisle(t.title);
+  function guessAisle(name) {
+    if (AISLE[state.history[name]]) return state.history[name];
+    for (const [id, , , words] of AISLES) if (words.some(w => name.includes(w))) return id;
+    return 'other';
+  }
+  // רשימת שבת קבועה לדוגמה (מזהים קבועים 0sh0, 0sh1...)
+  const SHABBAT_DEFAULT = [
+    ['חלות',2,'bread'],['יין לקידוש',1,'drinks'],['נרות שבת',1,'clean'],['עוף',1,'meat'],['דגים',1,'meat'],
+    ['חומוס',1,'pantry'],['טחינה',1,'pantry'],['מטבוחה',1,'pantry'],['עגבניות',1,'veg'],['מלפפונים',1,'veg'],
+    ['תפוחי אדמה',1,'veg'],['בצל',1,'veg'],['פירות',1,'veg'],['אורז',1,'pantry'],['עוגה',1,'bread'],
+    ['שתייה קלה',2,'drinks'],['מפיות',1,'clean'],['נייר כסף',1,'clean'],
+  ];
+  // „2 חלב”, „חלב 2”, „חלב x2” → שם וכמות
+  function parseQty(text) {
+    const t = text.trim().replace(/\s+/g, ' ');
+    const m = t.match(/^(\d+)\s*[x×]?\s+(.+)$/) || t.match(/^(.+?)\s+[x×]?\s*(\d+)$/);
+    if (!m) return {name: t, qty: 1};
+    const [a, b] = /^\d/.test(t) ? [m[2], m[1]] : [m[1], m[2]];
+    return {name: a.trim(), qty: Math.min(99, Math.max(1, +b))};
+  }
+  function updateAislePick() {
+    const shop = isShop(state.view);
+    $('aislePick').hidden = !shop;
+    if (!shop) return;
+    if (!$('aisle').dataset.manual) $('aisle').value = guessAisle(parseQty($('text').value).name || '');
+    $('aisleIcon').textContent = AISLE[$('aisle').value].icon;
+  }
+  $('aisle').innerHTML = AISLES.map(([id, icon, label]) => `<option value="${id}">${icon} ${label}</option>`).join('');
+  $('fAisle').innerHTML = $('aisle').innerHTML;
+  $('aisle').onchange = () => { $('aisle').dataset.manual = '1'; updateAislePick(); };
+
+  // ----- תמונות מוצרים -----
+  // תמונות אמיתיות למוצרים נפוצים (Unsplash). לפי הסדר: הראשון שמתאים לשם הפריט
+  const MG = 'Mockup Graphics';
+  const PHOTOS = [
+    [['תפוח אדמה','תפוחי אדמה','תפו"א'], 'photo-1587334274084-2def9f57bd27', MG],
+    [['עגבני'], 'photo-1571680322279-a226e6a4cc2a', "Ed O'Neil"],
+    [['מלפפ'], 'photo-1587411768638-ec71f8e33b78', MG],
+    [['פלפל חריף','צ\'ילי'], 'photo-1583119022894-919a68a3d0e3', MG],
+    [['פלפל'], 'photo-1579113800032-c38bd7635818', 'Marisol Benitez'],
+    [['בצל'], 'photo-1587049633312-d628ae50a8ae', MG],
+    [['שום'], 'photo-1587049332298-1c42e83937a7', MG, ['שומשום','שומן']],
+    [['גזר'], 'photo-1763712505260-def761cd0c34', 'Jenny Johannessen'],
+    [['לימון'], 'flagged/photo-1587302164675-820fe61bbd55', MG],
+    [['בננ'], 'photo-1587132137056-bfbf0166836e', MG],
+    [['תפוח','תפוחים'], 'photo-1568579029378-d2cc4074f57c', 'Richard Pennystan'],
+    [['תפוז','קלמנטינ','מנדרינ'], 'photo-1587735243615-c03f25aaff15', MG],
+    [['מנגו'], 'photo-1587131808575-655697d61a4e', MG],
+    [['רימון'], 'photo-1615485925600-97237c4fc1ec', MG],
+    [['אגס'], 'photo-1615484477778-ca3b77940c25', MG],
+    [['ענב'], 'photo-1615485925763-86786288908a', MG],
+    [['תות'], 'photo-1601004890684-d8cbf643f5f2', 'Allec Gomes'],
+    [['אבוקדו'], 'photo-1519162808019-7de1683fa2ad', 'Thought Catalog'],
+    [['חציל'], 'photo-1615484477201-9f4953340fab', MG],
+    [['שוקו'], 'photo-1542990253-0d0f5be5f0ed', 'Maddi Bazzocco', ['שוקולד']],
+    [['חלב'], 'photo-1550583724-b2692b85b150', 'Eiliv Aceron', ['חלבה']],
+    [['ביצ'], 'photo-1587486913049-53fc88980cfc', MG],
+    [['גבינ'], 'photo-1683314573422-649a3c6ad784', 'David Foodphototasty'],
+    [['חלה','חלות'], 'photo-1620416328855-f56e4e98637b', 'Megan Allen'],
+    [['פית'], 'photo-1710444448930-85ce405eb20f', 'Stephanie Sarlos'],
+    [['לחם'], 'photo-1534620808146-d33bb39128b2', 'Louise Lyshøj'],
+    [['עוגה','עוגות'], 'photo-1587333981056-844f89654004', MG],
+    [['עוף','חזה','שניצל','כרעיים','פרגי','שוקיים'], 'photo-1587593810167-a84920ea0781', 'JK Sloan'],
+    [['דגים','פילה','סלמון','אמנון','לברק','דניס'], 'photo-1633244092661-4519a1ffc67e', 'Food PhotoGraphy Mumbai'],
+    [['אורז'], 'photo-1586201375761-83865001e31c', 'Pierre Bamin'],
+    [['יין'], 'photo-1610631787813-9eeb1a2386cc', 'Duminda Perera'],
+    [['צ\'יפס'], 'photo-1615485290836-4ebcebf44aaf', MG],
+  ];
+  const photoUrl = (path, size) => `https://images.unsplash.com/${path}?w=${size}&h=${size}&fit=crop&crop=entropy&auto=format&q=60`;
+  const builtinPhoto = name => PHOTOS.find(([words, , , not = []]) => words.some(w => name.includes(w)) && !not.some(w => name.includes(w)));
+  // תמונות שנמצאו לבד בחיפוש: לפי שם הפריט, רק במכשיר הזה. {src, t}: src ריק = לא נמצא, מנסים שוב אחרי יום
+  const AUTO_KEY = 'lo-lishkoach-auto-photos-v1';
+  let autoPhotos = {};
+  try { autoPhotos = JSON.parse(localStorage.getItem(AUTO_KEY)) || {}; } catch {}
+  // ירקות ופירות, ומוצר כללי במילה אחת („חלב”): התמונה המובנית. מוצר עם פרטים („חלב תנובה 3%”): מחפשים את המוצר עצמו
+  const keepBuiltin = t => builtinPhoto(t.title) && (t.aisle === 'veg' || !t.title.includes(' '));
+  function photoFor(t, size) {
+    if (state.photos[t.title]) return {src: state.photos[t.title], mine: true};
+    const b = builtinPhoto(t.title);
+    if (b && (keepBuiltin(t) || !autoPhotos[t.title]?.src)) return {src: photoUrl(b[1], size), credit: b[2]};
+    if (autoPhotos[t.title]?.src) return {src: autoPhotos[t.title].src, auto: true};
+    return null;
+  }
+  // תמונה שבחרו: לפי שם המוצר, עוברת לכל המשפחה. photoTimes – למיזוג בין מכשירים (src ריק = הוסרה)
+  function setPhoto(name, src) {
+    if (src) state.photos[name] = src; else delete state.photos[name];
+    state.photoTimes[name] = Date.now();
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+    scheduleSync();
+  }
+  // מחפשים ברקע תמונה של המוצר המסוים לכל פריט קניות שעוד אין לו, אחד אחרי השני
+  let autoBusy = false;
+  async function fillAutoPhotos() {
+    if (autoBusy || navigator.onLine === false) return;
+    const shopTasks = state.tasks.filter(t => isShop(t.cat) && !t.done);
+    const need = [...shopTasks.filter(t => t.cat === state.view), ...shopTasks].find(t => !state.photos[t.title] && !keepBuiltin(t)
+      && !(autoPhotos[t.title] && (autoPhotos[t.title].src || Date.now() - autoPhotos[t.title].t < 864e5)));
+    if (!need) return;
+    autoBusy = true;
+    let src = '', answered = false;
+    for (const [, find] of SOURCES) {
+      try { src = (await find(need.title))[0]?.src || ''; answered = true; } catch {}
+      if (src) break;
+    }
+    // אף מקור לא ענה (בעיית רשת): לא נרשם כלום, ומנסים שוב בעוד 10 דקות
+    if (answered || src) {
+      autoPhotos[need.title] = {src, t: Date.now()};
+      try { localStorage.setItem(AUTO_KEY, JSON.stringify(autoPhotos)); } catch {}
+    } else autoPhotos[need.title] = {src: '', t: Date.now() - 864e5 + 10 * 60e3};
+    if (src && isShop(state.view)) render();
+    setTimeout(() => { autoBusy = false; fillAutoPhotos(); }, 1200);
+  }
+
+  // חיפוש תמונה של מוצר: Open Food Facts (מוצרים ארוזים, גם לפי ברקוד), ויקינתונים וויקיפדיה העברית
+  const OFF = 'https://world.openfoodfacts.org', OFF_FIELDS = 'product_name,product_name_he,brands,image_front_small_url';
+  const offItem = p => p.image_front_small_url && {src: p.image_front_small_url, label: [p.product_name_he || p.product_name, p.brands].filter(Boolean).join(' · ')};
+  async function getJson(url) {
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 10000);
+    try {
+      const r = await fetch(url, {signal: ctl.signal});
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return await r.json();
+    } finally { clearTimeout(timer); }
+  }
+  async function findByBarcode(code) {
+    const d = await getJson(`${OFF}/api/v2/product/${code}.json?fields=${OFF_FIELDS}`);
+    return d.product ? [offItem(d.product)].filter(Boolean) : [];
+  }
+  async function findProducts(q) {
+    let found = [];
+    try {
+      const d = await getJson(`https://search.openfoodfacts.org/search?q=${encodeURIComponent(q)}&page_size=12&fields=${OFF_FIELDS}`);
+      found = (d.hits || d.products || []).map(offItem).filter(Boolean);
+    } catch {}
+    if (found.length) return found;
+    const d = await getJson(`${OFF}/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=12&fields=${OFF_FIELDS}`);
+    return (d.products || []).map(offItem).filter(Boolean);
+  }
+  async function findWikidata(q) {
+    const W = 'https://www.wikidata.org/w/api.php?format=json&origin=*';
+    const sr = await getJson(`${W}&action=wbsearchentities&language=he&uselang=he&limit=6&search=${encodeURIComponent(q)}`);
+    const ids = (sr.search || []).map(e => e.id);
+    if (!ids.length) return [];
+    const d = await getJson(`${W}&action=wbgetentities&props=claims|labels&languages=he&ids=${ids.join('|')}`);
+    return ids.map(id => d.entities?.[id]).filter(e => e?.claims?.P18).map(e => ({
+      src: 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(e.claims.P18[0].mainsnak.datavalue.value) + '?width=300',
+      label: e.labels?.he?.value || q,
+    }));
+  }
+  async function findWiki(q) {
+    const d = await getJson(`https://he.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrlimit=6&gsrsearch=${encodeURIComponent(q)}&prop=pageimages&piprop=thumbnail&pithumbsize=300`);
+    return Object.values(d.query?.pages || {}).sort((a, b) => a.index - b.index)
+      .filter(p => p.thumbnail).map(p => ({src: p.thumbnail.source, label: p.title}));
+  }
+  const SOURCES = [['Open Food Facts', findProducts], ['ויקינתונים', findWikidata], ['ויקיפדיה', findWiki]];
+
+  let photoItem = null;
+  function openPhoto(t) {
+    photoItem = t;
+    const ph = photoFor(t, 800), big = $('picBig');
+    big.textContent = AISLE[aisleOf(t)].icon;
+    if (ph) { const img = new Image(); img.alt = t.title; img.src = ph.src; img.onerror = () => img.remove(); big.append(img); }
+    $('picName').textContent = t.title;
+    $('picCredit').innerHTML = ph && ph.credit
+      ? `צילום: ${ph.credit} / <a href="https://unsplash.com/?utm_source=lo_lishkoach&utm_medium=referral" target="_blank" rel="noopener">Unsplash</a>` : '';
+    $('unpic').hidden = !(ph && ph.mine);
+    $('shoot').textContent = ph && ph.mine ? '📷 צילום חדש' : '📷 צילום';
+    $('findText').value = t.title;
+    $('googleHint').hidden = true; $('urlForm').hidden = true; $('urlText').value = '';
+    $('findStatus').textContent = 'אפשר לחפש את המוצר המדויק (למשל: חלב תנובה 3%) ולבחור את התמונה שלו';
+    $('results').innerHTML = '';
+    $('photo').showModal();
+  }
+  let searchId = 0;
+  async function searchPhotos(q) {
+    q = q.trim();
+    if (!q) return;
+    const id = ++searchId, digits = q.replace(/\s/g, ''), bar = /^\d{8,14}$/.test(digits);
+    $('results').innerHTML = '';
+    $('findStatus').textContent = 'מחפש...';
+    const sources = bar ? [['ברקוד', findByBarcode]] : SOURCES;
+    const results = await Promise.allSettled(sources.map(([, find]) => find(bar ? digits : q)));
+    if (id !== searchId) return;
+    const found = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+    // שורת מצב לכל מקור: כמה נמצא, או מה השגיאה (עוזר להבין מה לא עובד)
+    const report = sources.map(([name], i) => name + ': ' + (results[i].status === 'fulfilled' ? results[i].value.length : 'שגיאה (' + (results[i].reason?.name === 'AbortError' ? 'לא ענה' : results[i].reason?.message || 'רשת') + ')')).join(' · ');
+    if (!found.length) {
+      $('findStatus').textContent = (navigator.onLine === false ? 'אין חיבור לאינטרנט' : 'לא נמצאו תמונות. אפשר לנסות שם אחר, לסרוק ברקוד או לצלם') + '\n' + report;
+      return;
+    }
+    $('findStatus').textContent = 'בוחרים את התמונה המתאימה:\n' + report;
+    for (const f of found.slice(0, 15)) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.innerHTML = '<img alt="" loading="lazy"><span></span>';
+      b.querySelector('img').src = f.src;
+      b.querySelector('img').onerror = () => b.remove();
+      b.querySelector('span').textContent = f.label;
+      b.onclick = () => { setPhoto(photoItem.title, f.src); $('photo').close(); render(); toast('התמונה נשמרה'); };
+      $('results').append(b);
+    }
+  }
+  $('find').onsubmit = e => { e.preventDefault(); $('findText').blur(); searchPhotos($('findText').value); };
+  $('scan').onclick = () => {
+    if (!('BarcodeDetector' in window)) {
+      $('findStatus').textContent = 'הטלפון לא קורא ברקוד מתמונה. אפשר להקליד את המספר שמתחת לברקוד ולחפש';
+      $('findText').value = ''; $('findText').focus();
+      return;
+    }
+    $('fileBarcode').click();
+  };
+  $('fileBarcode').onchange = async e => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const codes = await new BarcodeDetector().detect(await createImageBitmap(file));
+      if (!codes.length) return void ($('findStatus').textContent = 'לא זיהיתי ברקוד. כדאי לצלם מקרוב ובאור טוב');
+      $('findText').value = codes[0].rawValue;
+      searchPhotos(codes[0].rawValue);
+    } catch { $('findStatus').textContent = 'לא הצלחתי לקרוא את הברקוד'; }
+  };
+  $('picClose').onclick = () => $('photo').close();
+  $('photo').addEventListener('click', e => { if (e.target === $('photo')) $('photo').close(); });
+  $('shoot').onclick = () => $('fileShoot').click();
+  $('gallery').onclick = () => $('fileGallery').click();
+  $('unpic').onclick = () => { setPhoto(photoItem.title, ''); $('photo').close(); render(); };
+  for (const id of ['fileShoot', 'fileGallery']) $(id).onchange = e => { const f = e.target.files[0]; e.target.value = ''; usePhotoFile(f); };
+  // מקטינים לריבוע של 240 פיקסלים. אם יש קוד משפחתי, התמונה עולה לענן ונשמרת כקישור קטן
+  function shrinkSquare(file, S = 240) {
+    return new Promise((ok, fail) => {
+      const img = new Image(), url = URL.createObjectURL(file);
+      img.onload = () => {
+        const c = document.createElement('canvas'), m = Math.min(img.width, img.height);
+        c.width = c.height = S;
+        c.getContext('2d').drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, S, S);
+        URL.revokeObjectURL(url);
+        ok(c.toDataURL('image/jpeg', 0.75));
+      };
+      img.onerror = fail;
+      img.src = url;
+    });
+  }
+  async function storePhoto(dataUrl) {
+    if (!syncCode) return dataUrl;
+    try {
+      const blob = await (await fetch(dataUrl)).blob();
+      return (await uploadFile(new File([blob], 'photo.jpg', {type: 'image/jpeg'}))).url.split('?')[0];
+    } catch { return dataUrl; }
+  }
+  async function usePhotoFile(file) {
+    if (!file || !photoItem) return;
+    try {
+      const src = await storePhoto(await shrinkSquare(file));
+      setPhoto(photoItem.title, src);
+      $('photo').close(); render(); toast('התמונה נשמרה');
+    } catch { toast('לא הצלחתי לפתוח את התמונה'); }
+  }
+  // במחשב: גרירת תמונה לחלון, או הדבקה (תמונה או כתובת של תמונה)
+  $('photo').addEventListener('dragover', e => e.preventDefault());
+  $('photo').addEventListener('drop', e => { e.preventDefault(); usePhotoFile([...e.dataTransfer.files].find(f => f.type.startsWith('image/'))); });
+  const isImageUrl = t => /^(https?:\/\/\S+|data:image\/[a-z+]+;base64,\S+)$/i.test(t);
+  document.addEventListener('paste', e => {
+    if (!$('photo').open) return;
+    const f = [...(e.clipboardData?.files || [])].find(f => f.type.startsWith('image/'));
+    if (f) { e.preventDefault(); return usePhotoFile(f); }
+    const t = (e.clipboardData?.getData('text') || '').trim();
+    if (e.target !== $('urlText') && isImageUrl(t)) { e.preventDefault(); usePhotoUrl(t); }
+  });
+  // תמונה מגוגל: פותחים חיפוש תמונות, מעתיקים תמונה וחוזרים להדביק
+  $('google').onclick = () => {
+    $('googleHint').hidden = false;
+    window.open('https://www.google.com/search?tbm=isch&q=' + encodeURIComponent($('findText').value || photoItem.title), '_blank');
+  };
+  $('pasteBtn').onclick = async () => {
+    $('googleHint').hidden = false;
+    try {
+      for (const item of await navigator.clipboard.read()) {
+        const type = item.types.find(t => t.startsWith('image/'));
+        if (type) return usePhotoFile(await item.getType(type));
+      }
+    } catch {}
+    try {
+      const t = (await navigator.clipboard.readText()).trim();
+      if (isImageUrl(t)) return usePhotoUrl(t);
+    } catch {}
+    $('urlForm').hidden = false;
+    $('urlText').focus();
+    toast('לוחצים לחיצה ארוכה בשדה ← „הדבקה”');
+  };
+  $('urlForm').onsubmit = e => {
+    e.preventDefault();
+    const t = $('urlText').value.trim();
+    if (!isImageUrl(t)) return toast('זו לא נראית כתובת של תמונה');
+    usePhotoUrl(t);
+  };
+  // בודקים שהכתובת באמת נפתחת כתמונה, ושומרים
+  function usePhotoUrl(url) {
+    if (!photoItem) return;
+    const img = new Image();
+    img.onload = async () => {
+      if (url.startsWith('data:')) { try { return usePhotoFile(await (await fetch(url)).blob()); } catch {} }
+      setPhoto(photoItem.title, url);
+      $('photo').close(); render(); toast('התמונה נשמרה');
+    };
+    img.onerror = () => toast('לא הצלחתי לפתוח את התמונה מהכתובת הזו. אפשר לנסות תמונה אחרת');
+    img.src = url;
+  }
+
+  // ----- ייבוא מרשימת הקניות הישנה (אותו Supabase, הפונקציה shopping_get) -----
+  function openImport() {
+    let code = '', local = null;
+    try { code = localStorage.getItem('shopping-sync-code') || ''; local = JSON.parse(localStorage.getItem('shopping-list-v1')); } catch {}
+    $('importCode').value = code ? showCode(code) : '';
+    $('importLocalRow').hidden = !(local && local.lists);
+    $('importStatus').textContent = code ? 'מצאתי במכשיר הזה את הקוד של רשימת הקניות. לוחצים „ייבוא”.' : '';
+    $('importDlg').showModal();
+  }
+  async function importShopping(doc) {
+    if (!doc || !doc.lists) return 0;
+    let n = 0;
+    const add = (it, cat) => {
+      const name = (it.name || '').trim();
+      if (!name || state.tasks.some(t => t.cat === cat && t.title === name)) return;
+      state.tasks.push({id: uid(), title: name, cat, qty: it.qty || 1, aisle: AISLE[it.cat] ? it.cat : guessAisle(name), due: '', time: '', remind: -1, repeat: '', who: '', links: [], notes: '', done: !!it.done});
+      n++;
+    };
+    (doc.lists.general || []).forEach(it => add(it, 'super'));
+    (doc.lists.shabbat || []).forEach(it => add(it, 'shabbat'));
+    Object.assign(state.history, doc.history || {}, state.history);
+    // תמונות שבחרו ברשימת הקניות. צילומים (data:) עולים לענן אם יש קוד משפחתי
+    for (const [name, src] of Object.entries(doc.photos || {})) {
+      if (!src || state.photos[name]) continue;
+      state.photos[name] = src.startsWith('data:') ? await storePhoto(src) : src;
+      state.photoTimes[name] = Date.now();
+    }
+    save(); render();
+    return n;
+  }
+  $('importShop').onclick = openImport;
+  $('importClose').onclick = () => $('importDlg').close();
+  $('importForm').onsubmit = async e => {
+    e.preventDefault();
+    const c = cleanCode($('importCode').value);
+    if (c.length !== 12) return void ($('importStatus').textContent = 'הקוד צריך להיות 12 אותיות ומספרים (☁️ ברשימת הקניות)');
+    $('importStatus').textContent = 'מייבא...';
+    try {
+      const doc = await rpc('shopping_get', {p_code: c});
+      if (!doc) return void ($('importStatus').textContent = 'לא מצאתי רשימה עם הקוד הזה');
+      const n = await importShopping(doc);
+      $('importStatus').textContent = n ? `✓ עברו ${n} פריטים. אפשר לסגור ולהיכנס ל„קניות בסופר” ול„שבת”` : 'הכול כבר נמצא כאן, לא היה מה להוסיף';
+    } catch { $('importStatus').textContent = 'לא הצלחתי להתחבר. בודקים שיש אינטרנט ומנסים שוב'; }
+  };
+  $('importLocal').onclick = async () => {
+    let local = null;
+    try { local = JSON.parse(localStorage.getItem('shopping-list-v1')); local.photos = JSON.parse(localStorage.getItem('shopping-photos-v1') || '{}'); } catch {}
+    const n = await importShopping(local);
+    $('importStatus').textContent = n ? `✓ עברו ${n} פריטים מהמכשיר הזה` : 'הכול כבר נמצא כאן, לא היה מה להוסיף';
+  };
+
   const viewTasks = () => state.view === 'all' ? state.tasks : state.tasks.filter(t => catOf(t.cat).id === state.view);
   const people = () => [...new Set([...Object.keys(state.people), ...state.tasks.map(t => t.who).filter(Boolean), me].filter(Boolean))];
 
@@ -832,7 +1310,9 @@
     renderChips();
     const all = state.view === 'all', list = viewTasks();
     const cat = all ? null : catOf(state.view);
-    $('text').placeholder = all ? 'מה לא לשכוח? (למשל: לשלם חשמל מחר 18:00)' : `להוסיף ל${cat.name}...`;
+    $('text').placeholder = all ? 'מה לא לשכוח? (למשל: לשלם חשמל מחר 18:00)' : isShop(cat.id) ? 'מה צריך? (למשל: 2 חלב)' : `להוסיף ל${cat.name}...`;
+    $('clear').textContent = !all && cat.id === 'shabbat' ? '🕯️ שבת חדשה' : !all && cat.id === 'super' ? 'ניקוי מה שנקנה' : 'ניקוי מה שבוצע';
+    updateAislePick();
     $('hello').textContent = me ? `· ${me}` : '';
     const late = state.tasks.filter(isLate).length;
     document.title = (late ? `(${late}) ` : '') + 'לא לשכוח';
@@ -852,6 +1332,7 @@
       if (!all) { main.querySelector('.empty b').append(iconEl(cat)); main.querySelector('.empty .msg').textContent = cat.id === 'receipts' ? 'עוד אין קבלות.' : `אין עדיין כלום ב„${cat.name}”.`; }
       return;
     }
+    if (isShop(cat?.id)) return renderShop(main, list);
     // קבוצות לפי זמן: באיחור, היום, מחר, השבוע, בהמשך, בלי תאריך
     const left = new Set(open), groups = [];
     for (const [id, label, test] of GROUPS) {
@@ -870,6 +1351,18 @@
       if (!showDone) sec.querySelector('.card').remove();
       main.append(sec);
     }
+  }
+
+  // נושא קניות: התקדמות, ואז קבוצה לכל מחלקה לפי סדר המעברים בסופר. מה שנקנה יורד לסוף הקבוצה
+  function renderShop(main, list) {
+    const done = list.filter(t => t.done).length;
+    main.insertAdjacentHTML('beforeend', `<div class="shopbar"><div class="bar"><i style="width:${done / list.length * 100}%"></i></div><span>${done} מתוך ${list.length} נקנו</span></div>`);
+    for (const [id, icon, label] of AISLES) {
+      const g = list.filter(t => aisleOf(t) === id).sort((a, b) => a.done - b.done || (a.id < b.id ? -1 : 1));
+      if (g.length) main.append(section('aisle', `${icon} ${label}`, g, false));
+    }
+    if (!list.some(t => !t.done)) main.insertAdjacentHTML('beforeend', '<div class="empty"><b>🎉</b>הכול נקנה!</div>');
+    fillAutoPhotos();
   }
 
   // קישורים קבועים בראש נושא
@@ -942,12 +1435,21 @@
     el.dataset.id = t.id;
     el.innerHTML = `<button class="check" data-act="toggle" aria-label="בוצע"><span class="box"><svg viewBox="0 0 14 14"><path d="M2.5 7.5l3 3 6-7" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>`
       + (all ? `<span class="catic"></span>` : '')
-      + `<button class="open" data-act="edit"><span class="title"></span><span class="meta"></span></button>`;
+      + (!all && isShop(t.cat) ? `<button class="thumb" data-act="photo" aria-label="תמונה"></button>` : '')
+      + `<button class="open" data-act="edit"><span class="title"></span><span class="meta"></span></button>`
+      + (!all && isShop(t.cat) ? ((t.qty || 1) > 1 ? `<button class="qty" data-act="qty" aria-label="כמות">×${t.qty}</button>` : t.done ? '' : `<button class="qty one" data-act="qty" aria-label="להוסיף כמות">+</button>`) : '');
     if (all) el.querySelector('.catic').append(iconEl(catOf(t.cat)));
+    const th = el.querySelector('.thumb');
+    if (th) {
+      th.textContent = AISLE[aisleOf(t)].icon;
+      const ph = photoFor(t, 96);
+      if (ph) { const img = new Image(); img.alt = ''; img.loading = 'lazy'; img.src = ph.src; img.onerror = () => img.remove(); th.append(img); }
+    }
     el.querySelector('.title').textContent = t.title;
     const meta = el.querySelector('.meta'), tag = (text, cls) => { const s = document.createElement('span'); s.textContent = text; if (cls) s.className = cls; meta.append(s); };
     if (t.due) tag((t.remind >= 0 ? '🔔 ' : '') + dueText(t), 'due' + (isLate(t) ? ' late' : t.due === today() ? ' today' : ''));
     if (t.repeat) tag('🔁 ' + REPEAT[t.repeat]);
+    if (all && (t.qty || 1) > 1) tag('×' + t.qty);
     if (t.who) tag('👤 ' + t.who);
     if (t.done && t.doneBy) tag('✓ ' + t.doneBy);
     if (t.notes) tag('📝 ' + (t.notes.length > 30 ? t.notes.slice(0, 30) + '…' : t.notes));
@@ -1016,6 +1518,7 @@
   }
   function quickHint() {
     const v = $('text').value.trim();
+    if (isShop(state.view)) return void ($('hint').textContent = '');
     if (!v) return void ($('hint').textContent = '');
     const q = parseQuick(v), parts = [catOf(guessCat(q.title)).icon + ' ' + catOf(guessCat(q.title)).name];
     if (q.due) parts.push('🔔 ' + dueText(q));
@@ -1026,13 +1529,24 @@
     e.preventDefault();
     const v = $('text').value.trim();
     if (!v) return openEdit(null);
+    // בנושא קניות: „2 חלב” → חלב, כמות 2. אותו מוצר שעוד לא נקנה → הכמות גדלה
+    if (isShop(state.view)) {
+      const {name, qty} = parseQty(v), aisle = $('aisle').value;
+      const same = state.tasks.find(t => t.cat === state.view && t.title === name);
+      if (same) { same.qty = same.done ? qty : (same.qty || 1) + qty; same.done = false; same.aisle = aisle; }
+      else state.tasks.push({id: uid(), title: name, cat: state.view, qty, aisle, due: '', time: '', remind: -1, repeat: '', who: '', links: [], notes: '', done: false});
+      state.history[name] = aisle;
+      save(); render();
+      $('text').value = ''; delete $('aisle').dataset.manual; quickHint(); updateAislePick(); $('text').focus();
+      return;
+    }
     const q = parseQuick(v);
     state.tasks.push({id: uid(), title: q.title, cat: guessCat(q.title), due: q.due, time: q.time, remind: 0, repeat: '', who: '', links: [], notes: '', done: false});
     save(); render();
     $('text').value = ''; quickHint(); $('text').focus();
     if (q.due) askNotifOnce();
   };
-  $('text').oninput = quickHint;
+  $('text').oninput = () => { quickHint(); updateAislePick(); };
   $('more').onclick = () => openEdit(null, $('text').value.trim());
 
   // ----- עריכה -----
@@ -1044,6 +1558,8 @@
     $('fCat').innerHTML = state.cats.map(c => `<option value="${c.id}"></option>`).join('');
     [...$('fCat').options].forEach((o, i) => o.textContent = `${state.cats[i].icon} ${state.cats[i].name}`);
     $('fCat').value = t ? catOf(t.cat).id : guessCat(q.title || '');
+    $('fQty').value = t?.qty || 1;
+    $('fAisle').value = t ? aisleOf(t) : guessAisle(q.title || '');
     $('fDate').value = q.due || ''; $('fTime').value = q.time || '';
     $('fRemind').value = String(t ? t.remind : 0);
     $('fRepeat').value = t?.repeat || '';
@@ -1055,11 +1571,13 @@
     if (!t) $('fTitle').focus();
   }
   function formTask() {
-    return {title: $('fTitle').value.trim(), cat: $('fCat').value, due: $('fDate').value, time: $('fDate').value ? $('fTime').value : '',
+    const shop = isShop($('fCat').value);
+    return {qty: shop ? Math.min(99, Math.max(1, +$('fQty').value || 1)) : undefined, aisle: shop ? $('fAisle').value : undefined, title: $('fTitle').value.trim(), cat: $('fCat').value, due: $('fDate').value, time: $('fDate').value ? $('fTime').value : '',
       remind: +$('fRemind').value, repeat: $('fDate').value ? $('fRepeat').value : '', who: $('fWho').value.trim(), links: readLinks($('fLinks')), files: $('fFiles')._files, contacts: readContacts($('fContacts')), notes: $('fNotes').value.trim()};
   }
   function editChanged() {
     const f = formTask();
+    $('shopFields').hidden = !isShop(f.cat);
     $('fRemind').disabled = $('fRepeat').disabled = !f.due;
     let note = '';
     if (f.due && f.remind >= 0) {
@@ -1072,7 +1590,7 @@
     $('fCal').hidden = !f.due || !f.title;
     if (f.due && f.title) $('fCal').href = calLink(f);
   }
-  for (const id of ['fTitle', 'fDate', 'fTime', 'fRemind', 'fRepeat', 'fWho']) $(id).addEventListener('input', editChanged);
+  for (const id of ['fTitle', 'fDate', 'fTime', 'fRemind', 'fRepeat', 'fWho', 'fCat']) $(id).addEventListener('input', editChanged);
   $('quickDates').onclick = e => {
     const b = e.target.closest('button');
     if (!b) return;
@@ -1084,6 +1602,7 @@
     const f = formTask();
     if (!f.title) return $('fTitle').focus();
     if (f.who) state.people[f.who] = 1;
+    if (f.aisle) state.history[f.title] = f.aisle;
     if (editing) { Object.assign(editing, f); delete editing.link; }
     else state.tasks.push({id: uid(), ...f, done: false});
     save(); render(); $('edit').close();
@@ -1157,6 +1676,8 @@
     const t = state.tasks.find(x => x.id === btn.closest('.item')?.dataset.id);
     if (!t) return;
     if (btn.dataset.act === 'edit') return openEdit(t);
+    if (btn.dataset.act === 'photo') return openPhoto(t);
+    if (btn.dataset.act === 'qty') { t.qty = (t.qty || 1) >= 20 ? 1 : (t.qty || 1) + 1; save(); return render(); }
     if (btn.dataset.act === 'toggle') {
       const u = snapshot();
       if (navigator.vibrate) navigator.vibrate(10);
@@ -1185,6 +1706,12 @@
   });
 
   $('clear').onclick = () => {
+    // שבת: מבטלים את כל הסימונים בלי למחוק, לקנייה של השבוע הבא
+    if (state.view === 'shabbat') {
+      const u = snapshot();
+      viewTasks().forEach(t => { t.done = false; t.doneBy = ''; });
+      save(); render(); return toast('רשימת השבת מוכנה לקנייה חדשה', u);
+    }
     const n = viewTasks().filter(t => t.done).length;
     if (!n) return toast('עוד לא סימנת שום דבר כבוצע');
     const u = snapshot(), gone = new Set(viewTasks().filter(t => t.done));
@@ -1195,6 +1722,17 @@
   $('share').onclick = async () => {
     const list = viewTasks().filter(t => !t.done);
     if (!list.length) return toast('אין מה לשתף, הכול בוצע');
+    // קניות: לפי מחלקות בסופר, עם כמויות
+    if (isShop(state.view)) {
+      let text = (state.view === 'shabbat' ? '🕯️ קניות לשבת' : '🛒 רשימת קניות') + '\n';
+      for (const [id, icon, label] of AISLES) {
+        const g = list.filter(t => aisleOf(t) === id);
+        if (g.length) text += `\n${icon} ${label}\n` + g.map(t => `• ${t.title}${(t.qty || 1) > 1 ? ' ×' + t.qty : ''}`).join('\n') + '\n';
+      }
+      if (navigator.share) { try { await navigator.share({text: text.trim()}); } catch {} }
+      else location.href = 'https://wa.me/?text=' + encodeURIComponent(text.trim());
+      return;
+    }
     const cats = state.view === 'all' ? state.cats : [catOf(state.view)];
     let text = state.view === 'all' ? '🔔 לא לשכוח\n' : '';
     for (const c of cats) {
@@ -1468,7 +2006,7 @@
   const getRemote = c => rpc('lo_lishkoach_get', {p_code: c});
   const putRemote = (c, d) => rpc('lo_lishkoach_put', {p_code: c, p_data: d});
 
-  const localDoc = () => ({v: 1, tasks: state.tasks, cats: state.cats, gone: state.gone, people: state.people});
+  const localDoc = () => ({v: 1, tasks: state.tasks, cats: state.cats, gone: state.gone, people: state.people, history: state.history, photos: state.photos, photoTimes: state.photoTimes});
 
   // מיזוג: לכל משימה ולכל נושא מנצח השינוי האחרון. מה שנמחק אחרי השינוי האחרון שלו – לא חוזר.
   function mergeDocs(a, b) {
@@ -1489,10 +2027,19 @@
     };
     let cats = mergeList(a.cats, b.cats, false);
     if (!cats.length) cats = a.cats;
-    return {v: 1, tasks: mergeList(a.tasks, b.tasks, true), cats, gone, people: {...(b.people || {}), ...(a.people || {})}};
+    // תמונות מוצרים: לכל שם מנצח השינוי האחרון (src ריק = הוסרה)
+    const photos = {}, photoTimes = {};
+    for (const n of new Set([...Object.keys(a.photos || {}), ...Object.keys(b.photos || {}), ...Object.keys(a.photoTimes || {}), ...Object.keys(b.photoTimes || {})])) {
+      const ta = (a.photoTimes || {})[n] || 0, tb = (b.photoTimes || {})[n] || 0;
+      if (ta || tb) photoTimes[n] = Math.max(ta, tb);
+      const src = ta >= tb ? (a.photos || {})[n] : (b.photos || {})[n];
+      if (src) photos[n] = src;
+    }
+    return {v: 1, tasks: mergeList(a.tasks, b.tasks, true), cats, gone, people: {...(b.people || {}), ...(a.people || {})}, history: {...(b.history || {}), ...(a.history || {})}, photos, photoTimes};
   }
   function applyDoc(d) {
     state.tasks = d.tasks; state.cats = d.cats; state.gone = d.gone; state.people = d.people;
+    state.history = d.history || {}; state.photos = d.photos || {}; state.photoTimes = d.photoTimes || {};
     rememberSaved();
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
     planReminders();
