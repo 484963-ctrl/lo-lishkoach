@@ -151,6 +151,17 @@
     .shopbar .bar{flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
     .shopbar .bar i{display:block;height:100%;background:var(--accent);transition:width .25s}
     .shopbar button{border:0;border-radius:10px;padding:8px 12px;background:var(--accent);color:#fff;font-weight:700}
+    /* הזמנה אונליין (רמי לוי) */
+    .store{flex:none;width:40px;height:40px;border:0;border-radius:10px;background:none;display:grid;place-items:center;padding:0}
+    .store b{width:28px;height:28px;border-radius:8px;background:#e30613;color:#fff;font-size:.62em;display:grid;place-items:center;letter-spacing:-.02em}
+    .item.done .store{display:none}
+    .shopbar .order{background:#e30613}
+    .omode{margin-top:6px;background:var(--bg);border-radius:14px;padding:14px;text-align:center}
+    .omode .oi{width:96px;height:96px;margin:0 auto 8px;border-radius:14px;overflow:hidden;background:var(--accent-soft);display:grid;place-items:center;font-size:2.6em;position:relative}
+    .omode .oi img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+    .omode b{display:block;font-size:1.25em}
+    .omode small{color:var(--muted)}
+    #orderOpen.rl{background:#e30613!important;color:#fff!important}
     /* חלון תמונת מוצר */
     .pic{aspect-ratio:16/10;background:var(--accent-soft);display:grid;place-items:center;font-size:5em;position:relative}
     .pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -376,6 +387,22 @@
   <input type="file" id="fileGallery" accept="image/*" hidden>
   <input type="file" id="fileBarcode" accept="image/*" capture="environment" hidden>
 
+  <!-- הזמנה אונליין: מעבר על הרשימה מוצר אחרי מוצר -->
+  <dialog id="orderDlg">
+    <div class="sheet">
+      <h3 id="orderTitle">הזמנה ברמי לוי</h3>
+      <p class="status" style="margin-top:0">לכל מוצר: „חיפוש” פותח אותו באתר של רמי לוי, מוסיפים שם לסל וחוזרים לכאן ל„הוספתי”.</p>
+      <div class="omode">
+        <div class="oi" id="orderPic"></div>
+        <b id="orderName"></b>
+        <small id="orderInfo"></small>
+      </div>
+      <div class="row"><button class="primary rl" id="orderOpen">🔎 חיפוש ברמי לוי</button></div>
+      <div class="row"><button class="primary" id="orderAdded">✓ הוספתי לסל</button><button id="orderSkip">דילוג</button></div>
+      <div class="row"><button id="orderStop">סיום</button></div>
+    </div>
+  </dialog>
+
   <!-- ייבוא מרשימת הקניות הישנה -->
   <dialog id="importDlg">
     <div class="sheet">
@@ -420,6 +447,8 @@
       <h3>⚙️ הגדרות</h3>
       <label for="myName">השם שלי (כדי שתזכורות של משימות של אחרים לא יגיעו אליי)</label>
       <input class="field" id="myName" list="people" placeholder="למשל: אמא">
+      <label for="storeSel">רשת לקניות אונליין (כפתור ליד כל מוצר בקניות)</label>
+      <select id="storeSel"><option value="ramilevy">רמי לוי</option><option value="">בלי</option></select>
       <label>רשימת הקניות הישנה</label>
       <div class="row" style="margin-top:0"><button id="importShop">🛒 ייבוא מרשימת הקניות</button></div>
       <label>התראות</label>
@@ -489,7 +518,7 @@
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const SITE = 'https://484963-ctrl.github.io/lo-lishkoach/';
   // מספר הגרסה: מעלים אותו בכל עדכון. מופיע בהגדרות, בדף המידע ובשם הקובץ לטלפון
-  const APP_VERSION = '2.0';
+  const APP_VERSION = '2.1';
 
   // נושאים לדוגמה. מזהה קבוע, כדי שיהיו זהים בכל מכשיר חדש. אפשר לשנות, למחוק ולהוסיף בהגדרות
   const DEFAULT_CATS = [
@@ -1219,6 +1248,56 @@
     img.src = url;
   }
 
+  // ----- הזמנה אונליין: כפתור ליד כל מוצר, ו„מצב הזמנה” שעובר על כל הרשימה -----
+  // אין לרשתות דרך רשמית להוסיף לסל מבחוץ, אז פותחים את החיפוש של המוצר באתר הרשת, ומוסיפים לסל שם
+  const STORES = {
+    ramilevy: {name: 'רמי לוי', short: 'רמי<br>לוי', search: q => 'https://www.rami-levy.co.il/he/online/search?q=' + encodeURIComponent(q)},
+  };
+  const STORE_KEY = 'lo-lishkoach-store';
+  let storeId = 'ramilevy';
+  try { const v = localStorage.getItem(STORE_KEY); if (v !== null) storeId = v; } catch {}
+  const store = () => STORES[storeId] || null;
+  $('storeSel').value = storeId;
+  $('storeSel').onchange = () => { storeId = $('storeSel').value; try { localStorage.setItem(STORE_KEY, storeId); } catch {} render(); };
+  // שם לחיפוש: בלי כמות ובלי סימנים מיותרים
+  const searchName = t => t.title.replace(/[×x]\s*\d+$/, '').trim();
+  function openStore(t) {
+    const st = store();
+    if (st) window.open(st.search(searchName(t)), '_blank', 'noopener');
+  }
+  let orderList = [], orderIdx = 0, orderAdded = 0;
+  function startOrder() {
+    const st = store();
+    if (!st) return toast('בוחרים רשת ב־⚙️ ← „רשת לקניות אונליין”');
+    orderList = viewTasks().filter(t => !t.done).sort((a, b) => AISLES.findIndex(x => x[0] === aisleOf(a)) - AISLES.findIndex(x => x[0] === aisleOf(b)) || (a.id < b.id ? -1 : 1));
+    if (!orderList.length) return toast('אין מה להזמין, הכול כבר נקנה');
+    orderIdx = 0; orderAdded = 0;
+    $('orderTitle').textContent = `🛒 הזמנה ב${st.name}`;
+    $('orderOpen').textContent = `🔎 חיפוש ב${st.name}`;
+    showOrderItem();
+    $('orderDlg').showModal();
+  }
+  function showOrderItem() {
+    const t = orderList[orderIdx];
+    if (!t) {
+      $('orderDlg').close();
+      return toast(`✓ סיימנו. ${orderAdded} מוצרים סומנו כהוזמנו`);
+    }
+    $('orderName').textContent = t.title;
+    $('orderInfo').textContent = `מוצר ${orderIdx + 1} מתוך ${orderList.length}` + ((t.qty || 1) > 1 ? ` · כמות: ${t.qty}` : '');
+    const pic = $('orderPic'), ph = photoFor(t, 200);
+    pic.textContent = AISLE[aisleOf(t)].icon;
+    if (ph) { const img = new Image(); img.alt = ''; img.src = ph.src; img.onerror = () => img.remove(); pic.append(img); }
+  }
+  $('orderOpen').onclick = () => openStore(orderList[orderIdx]);
+  $('orderAdded').onclick = () => {
+    const t = orderList[orderIdx];
+    if (t) { t.done = true; t.doneBy = me; orderAdded++; save(); render(); }
+    orderIdx++; showOrderItem();
+  };
+  $('orderSkip').onclick = () => { orderIdx++; showOrderItem(); };
+  $('orderStop').onclick = () => { $('orderDlg').close(); if (orderAdded) toast(`${orderAdded} מוצרים סומנו כהוזמנו`); };
+
   // ----- ייבוא מרשימת הקניות הישנה (אותו Supabase, הפונקציה shopping_get) -----
   function openImport() {
     let code = '', local = null;
@@ -1356,7 +1435,7 @@
   // נושא קניות: התקדמות, ואז קבוצה לכל מחלקה לפי סדר המעברים בסופר. מה שנקנה יורד לסוף הקבוצה
   function renderShop(main, list) {
     const done = list.filter(t => t.done).length;
-    main.insertAdjacentHTML('beforeend', `<div class="shopbar"><div class="bar"><i style="width:${done / list.length * 100}%"></i></div><span>${done} מתוך ${list.length} נקנו</span></div>`);
+    main.insertAdjacentHTML('beforeend', `<div class="shopbar"><div class="bar"><i style="width:${done / list.length * 100}%"></i></div><span>${done} מתוך ${list.length} נקנו</span>${store() && done < list.length ? `<button class="order" data-act="order">🛒 הזמנה ב${store().name}</button>` : ''}</div>`);
     for (const [id, icon, label] of AISLES) {
       const g = list.filter(t => aisleOf(t) === id).sort((a, b) => a.done - b.done || (a.id < b.id ? -1 : 1));
       if (g.length) main.append(section('aisle', `${icon} ${label}`, g, false));
@@ -1437,6 +1516,7 @@
       + (all ? `<span class="catic"></span>` : '')
       + (!all && isShop(t.cat) ? `<button class="thumb" data-act="photo" aria-label="תמונה"></button>` : '')
       + `<button class="open" data-act="edit"><span class="title"></span><span class="meta"></span></button>`
+      + (!all && isShop(t.cat) && store() ? `<button class="store" data-act="store" aria-label="חיפוש ב${store().name}" title="חיפוש ב${store().name}"><b>${store().short}</b></button>` : '')
       + (!all && isShop(t.cat) ? ((t.qty || 1) > 1 ? `<button class="qty" data-act="qty" aria-label="כמות">×${t.qty}</button>` : t.done ? '' : `<button class="qty one" data-act="qty" aria-label="להוסיף כמות">+</button>`) : '');
     if (all) el.querySelector('.catic').append(iconEl(catOf(t.cat)));
     const th = el.querySelector('.thumb');
@@ -1651,11 +1731,19 @@
   // ----- סימון, מחיקה, שיתוף -----
   function toast(text, undo) {
     $('toastText').textContent = text;
+    $('undo').textContent = 'ביטול';
     lastUndo = undo;
     $('undo').hidden = !undo;
     $('toast').classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => $('toast').classList.remove('show'), 4500);
+  }
+  // הודעה עם כפתור פעולה (למשל „✓ כן, לסמן”), נשארת יותר זמן
+  function toastAction(text, label, fn) {
+    toast(text, fn);
+    $('undo').textContent = label;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { $('toast').classList.remove('show'); $('undo').textContent = 'ביטול'; }, 12000);
   }
   function snapshot() {
     const copy = JSON.stringify(state.tasks);
@@ -1668,6 +1756,7 @@
     if (!btn) return;
     if (btn.dataset.act === 'showdone') { showDone = !showDone; return render(); }
     if (btn.dataset.act === 'pins') return openPins(catOf(state.view));
+    if (btn.dataset.act === 'order') return startOrder();
     if (btn.dataset.act === 'rcam') return $('rcptCam').click();
     if (btn.dataset.act === 'rfile') return $('rcptFile').click();
     if (btn.dataset.act === 'calls') { const t = state.tasks.find(x => x.id === btn.closest('.item')?.dataset.id); return openCalls(t.title, contactsOf(t)); }
@@ -1677,6 +1766,11 @@
     if (!t) return;
     if (btn.dataset.act === 'edit') return openEdit(t);
     if (btn.dataset.act === 'photo') return openPhoto(t);
+    if (btn.dataset.act === 'store') {
+      openStore(t);
+      // כשחוזרים מאתר הרשת: הצעה לסמן שהמוצר בסל
+      return toastAction(`הוספת את „${t.title}” לסל?`, '✓ כן, לסמן', () => { t.done = true; t.doneBy = me; save(); render(); });
+    }
     if (btn.dataset.act === 'qty') { t.qty = (t.qty || 1) >= 20 ? 1 : (t.qty || 1) + 1; save(); return render(); }
     if (btn.dataset.act === 'toggle') {
       const u = snapshot();
